@@ -1,7 +1,7 @@
-rootProject.name = 'project_name'
+rootProject.name = 'plagubot.suggestionsbot'
 
 String[] includes = [
-    ":lib"
+    ":common",
 ]
 
 
