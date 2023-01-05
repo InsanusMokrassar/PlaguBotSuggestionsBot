@@ -7,12 +7,9 @@ apply from: "$mppJavaProjectPresetPath"
 
 kotlin {
     sourceSets {
-        // Some other code
         commonMain {
             dependencies {
                 api project(":plagubot.suggestionsbot.common")
-                api project(":plagubot.suggestionsbot.registrar")
-                api libs.plaguposter.posts
             }
         }
     }

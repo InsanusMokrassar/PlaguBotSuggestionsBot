@@ -1,0 +1,21 @@
+{
+  "database": {
+    "url": "jdbc:postgresql://127.0.0.1:8093/test",
+    "username": "test",
+    "password": "test",
+    "driver": "org.postgresql.Driver"
+  },
+  "botToken": "1234567890:ABCDEFGHIJKLMNOP_qrstuvwxyz12345678",
+  "plugins": [
+    "dev.inmo.plagubot.suggestionsbot.common.Plugin",
+    "dev.inmo.plagubot.suggestionsbot.registrar.Plugin",
+    "dev.inmo.plaguposter.posts.Plugin"
+  ],
+  "posts": {
+    "chats": {
+      "targetChat": 12345678,
+      "cacheChat": 12345678,
+      "sourceChat": 12345678
+    }
+  }
+}
