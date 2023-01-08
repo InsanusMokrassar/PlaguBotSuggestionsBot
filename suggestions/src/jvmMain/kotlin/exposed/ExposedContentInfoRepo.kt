@@ -9,7 +9,7 @@ internal class ExposedContentInfoRepo(
     override val database: Database,
     suggestionIdColumnReference: Column<String>
 ) : ExposedRepo, Table(name = "suggestions_content") {
-    val postIdColumn = text("post_id").references(suggestionIdColumnReference, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
+    val suggestionIdColumn = text("suggestion_id").references(suggestionIdColumnReference, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
     val chatIdColumn = long("chat_id")
     val threadIdColumn = long("thread_id").nullable().default(null)
     val messageIdColumn = long("message_id")

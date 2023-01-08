@@ -3,7 +3,6 @@ package dev.inmo.plagubot.suggestionsbot.suggestons.exposed
 import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.repos.exposed.*
 import dev.inmo.plagubot.suggestionsbot.suggestons.models.*
-import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.UserId
 import org.jetbrains.exposed.sql.*
 
@@ -11,7 +10,7 @@ internal class ExposedStatusesRepo(
     override val database: Database,
     suggestionIdColumnReference: Column<String>
 ) : ExposedRepo, Table(name = "suggestions_statuses") {
-    val postIdColumn = text("post_id").references(suggestionIdColumnReference, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
+    val suggestionIdColumn = text("suggestion_id").references(suggestionIdColumnReference, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
     val statusTypeColumn = byte("type")
     val reviewerIdColumn = long("reviewer_id").nullable().default(null)
     val dateTimeColumn = double("date_time")
@@ -43,7 +42,7 @@ internal class ExposedStatusesRepo(
             1 -> SuggestionStatus.OnReview(dateTime)
             2 -> SuggestionStatus.Accepted(reviewerId ?: error("Reviewer parameter is required for Accepted status"), dateTime)
             3 -> SuggestionStatus.Banned(reviewerId ?: error("Reviewer parameter is required for Banned status"), dateTime)
-            4,
+            4 -> SuggestionStatus.Rejected(reviewerId ?: error("Reviewer parameter is required for Rejected status"), dateTime)
             else -> SuggestionStatus.Rejected(reviewerId ?: error("Reviewer parameter is required for Rejected status"), dateTime)
         }
     }

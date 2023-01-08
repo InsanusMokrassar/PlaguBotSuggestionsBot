@@ -8,11 +8,13 @@ import kotlinx.serialization.Serializable
 sealed interface Suggestion {
     val user: UserId
     val isAnonymous: Boolean
+    val status: SuggestionStatus
     val content: List<SuggestionContentInfo>
 }
 
 @Serializable
 data class NewSuggestion(
+    override val status: SuggestionStatus,
     override val user: UserId,
     override val isAnonymous: Boolean,
     override val content: List<SuggestionContentInfo>
@@ -21,7 +23,7 @@ data class NewSuggestion(
 @Serializable
 data class RegisteredSuggestion(
     val id: SuggestionId,
-    val status: SuggestionStatus,
+    override val status: SuggestionStatus,
     override val user: UserId,
     override val isAnonymous: Boolean,
     override val content: List<SuggestionContentInfo>

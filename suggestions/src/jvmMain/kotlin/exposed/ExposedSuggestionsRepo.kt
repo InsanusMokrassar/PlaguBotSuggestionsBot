@@ -1,14 +1,15 @@
 package dev.inmo.plagubot.suggestionsbot.suggestons.exposed
 
 import com.benasher44.uuid.uuid4
-import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.repos.UpdatedValuePair
 import dev.inmo.micro_utils.repos.exposed.AbstractExposedCRUDRepo
 import dev.inmo.micro_utils.repos.exposed.initTable
+import dev.inmo.plagubot.suggestionsbot.suggestons.exposed.ExposedStatusesRepo.Companion.statusType
 import dev.inmo.plagubot.suggestionsbot.suggestons.models.*
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
+import dev.inmo.tgbotapi.types.UserId
 import kotlinx.coroutines.flow.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -16,12 +17,14 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.statements.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class ExposedPostsRepo(
+class ExposedSuggestionsRepo(
     override val database: Database
 ) : SuggestionsRepo, AbstractExposedCRUDRepo<RegisteredSuggestion, SuggestionId, NewSuggestion>(
     tableName = "suggestions"
 ) {
     val idColumn = text("id")
+    val userIdColumn = long("user_id")
+    val isAnonymousColumn = bool("anonymous")
 
     private val contentRepo by lazy {
         ExposedContentInfoRepo(
@@ -31,7 +34,7 @@ class ExposedPostsRepo(
     }
 
     private val statusesRepo by lazy {
-        ExposedContentInfoRepo(
+        ExposedStatusesRepo(
             database,
             idColumn
         )
@@ -48,9 +51,18 @@ class ExposedPostsRepo(
             val id = asId
             return RegisteredSuggestion(
                 id,
-                DateTime(get(createdColumn)),
+                with(statusesRepo) {
+                    select {
+                        suggestionIdColumn.eq(id.string)
+                    }.orderBy(
+                        dateTimeColumn,
+                        SortOrder.DESC
+                    ).limit(1).firstOrNull() ?.asObject
+                } ?: error("Unable to take any status for the suggestion $id"),
+                UserId(get(userIdColumn)),
+                get(isAnonymousColumn),
                 with(contentRepo) {
-                    select { postIdColumn.eq(id.string) }.map {
+                    select { suggestionIdColumn.eq(id.string) }.map {
                         it.asObject
                     }
                 }
@@ -69,9 +81,18 @@ class ExposedPostsRepo(
 
         return RegisteredSuggestion(
             id,
-            DateTime(get(createdColumn)),
+            with(statusesRepo) {
+                select {
+                    suggestionIdColumn.eq(id.string)
+                }.orderBy(
+                    dateTimeColumn,
+                    SortOrder.DESC
+                ).limit(1).firstOrNull() ?.asObject
+            } ?: value.status,
+            UserId(get(userIdColumn)),
+            get(isAnonymousColumn),
             with(contentRepo) {
-                select { postIdColumn.eq(id.string) }.map {
+                select { suggestionIdColumn.eq(id.string) }.map {
                     it.asObject
                 }
             }
@@ -84,35 +105,50 @@ class ExposedPostsRepo(
         return id
     }
 
-    override fun update(id: SuggestionId?, value: NewSuggestion, it: UpdateBuilder<Int>) {}
+    override fun update(id: SuggestionId?, value: NewSuggestion, it: UpdateBuilder<Int>) {
+        it[userIdColumn] = value.user.chatId
+        it[isAnonymousColumn] = value.isAnonymous
+    }
 
-    private fun updateContent(post: RegisteredSuggestion) {
-        transaction(database) {
-            with(contentRepo) {
-                deleteWhere { postIdColumn.eq(post.id.string) }
-                post.content.forEach { contentInfo ->
-                    insert {
-                        it[postIdColumn] = post.id.string
-                        it[chatIdColumn] = contentInfo.chatId.chatId
-                        it[threadIdColumn] = contentInfo.chatId.threadId
-                        it[messageIdColumn] = contentInfo.messageId
-                        it[groupColumn] = contentInfo.group
-                        it[orderColumn] = contentInfo.order
-                    }
+    private fun updateStatusWithoutTransaction(suggestionId: SuggestionId, status: SuggestionStatus) {
+        with(statusesRepo) {
+            val latestStatus = select {
+                suggestionIdColumn.eq(suggestionId.string)
+            }.orderBy(dateTimeColumn, SortOrder.DESC).limit(1).firstOrNull() ?.asObject
+            if (latestStatus ?.statusType() != status.statusType()) {
+                insert {
+                    it[suggestionIdColumn] = suggestionId.string
+                    it[dateTimeColumn] = status.dateTime.unixMillis
+                    it[reviewerIdColumn] = (status as? SuggestionStatus.Reviewed) ?.reviewerId ?.chatId
+                    it[statusTypeColumn] = status.statusType()
                 }
             }
         }
     }
 
-    override fun insert(value: NewSuggestion, it: InsertStatement<Number>) {
-        super.insert(value, it)
-        it[createdColumn] = DateTime.now().unixMillis
+    private fun updateContentWithoutTransaction(post: RegisteredSuggestion) {
+        with(contentRepo) {
+            deleteWhere { suggestionIdColumn.eq(post.id.string) }
+            post.content.forEach { contentInfo ->
+                insert {
+                    it[suggestionIdColumn] = post.id.string
+                    it[chatIdColumn] = contentInfo.chatId.chatId
+                    it[threadIdColumn] = contentInfo.chatId.threadId
+                    it[messageIdColumn] = contentInfo.messageId
+                    it[groupColumn] = contentInfo.group
+                    it[orderColumn] = contentInfo.order
+                }
+            }
+        }
     }
 
     override suspend fun onAfterCreate(values: List<Pair<NewSuggestion, RegisteredSuggestion>>): List<RegisteredSuggestion> {
         return values.map {
             val actual = it.second.copy(content = it.first.content)
-            updateContent(actual)
+            transaction(database) {
+                updateStatusWithoutTransaction(actual.id, actual.status)
+                updateContentWithoutTransaction(actual)
+            }
             actual
         }
     }
@@ -120,24 +156,27 @@ class ExposedPostsRepo(
     override suspend fun onAfterUpdate(value: List<UpdatedValuePair<NewSuggestion, RegisteredSuggestion>>): List<RegisteredSuggestion> {
         return value.map {
             val actual = it.second.copy(content = it.first.content)
-            updateContent(actual)
+            transaction(database) {
+                updateStatusWithoutTransaction(actual.id, actual.status)
+                updateContentWithoutTransaction(actual)
+            }
             actual
         }
     }
 
     override suspend fun deleteById(ids: List<SuggestionId>) {
         onBeforeDelete(ids)
-        val posts = ids.mapNotNull {
+        val suggestions = ids.mapNotNull {
             getById(it)
         }.associateBy { it.id }
-        val existsIds = posts.keys.toList()
+        val existsIds = suggestions.keys.toList()
         transaction(db = database) {
             val deleted = deleteWhere(null, null) {
                 selectByIds(it, existsIds)
             }
             with(contentRepo) {
                 deleteWhere {
-                    postIdColumn.inList(existsIds.map { it.string })
+                    suggestionIdColumn.inList(existsIds.map { it.string })
                 }
             }
             if (deleted == existsIds.size) {
@@ -149,7 +188,7 @@ class ExposedPostsRepo(
             }
         }.forEach {
             _deletedObjectsIdsFlow.emit(it)
-            _removedPostsFlow.emit(posts[it] ?: return@forEach)
+            _removedPostsFlow.emit(suggestions[it] ?: return@forEach)
         }
     }
 
@@ -160,18 +199,24 @@ class ExposedPostsRepo(
                     chatIdColumn.eq(chatId.chatId)
                         .and(chatId.threadId ?.let { threadIdColumn.eq(it) } ?: threadIdColumn.isNull())
                         .and(messageIdColumn.eq(messageId))
-                }.limit(1).firstOrNull() ?.get(postIdColumn)
+                }.limit(1).firstOrNull() ?.get(suggestionIdColumn)
             } ?.let(::SuggestionId)
         }
     }
 
-    override suspend fun getSuggestionCreationTime(suggestionId: SuggestionId): DateTime? = transaction(database) {
-        select { selectById(suggestionId) }.limit(1).firstOrNull() ?.get(createdColumn) ?.let(::DateTime)
-    }
-
     override suspend fun getFirstMessageInfo(suggestionId: SuggestionId): SuggestionContentInfo? = transaction(database) {
         with(contentRepo) {
-            select { postIdColumn.eq(suggestionId.string) }.limit(1).firstOrNull() ?.asObject
+            select { suggestionIdColumn.eq(suggestionId.string) }.limit(1).firstOrNull() ?.asObject
         }
+    }
+
+    override suspend fun getSuggestionStatusesHistory(
+        suggestionId: SuggestionId
+    ): List<SuggestionStatus> = transaction(database) {
+        with (statusesRepo) {
+            select { suggestionIdColumn.eq(suggestionId.string) }.map { it.asObject }
+        }
+    }.sortedBy {
+        it.dateTime
     }
 }

@@ -12,7 +12,7 @@ import dev.inmo.tgbotapi.extensions.utils.*
 import dev.inmo.tgbotapi.types.*
 import dev.inmo.tgbotapi.types.message.content.MediaGroupPartContent
 
-class PostPublisher(
+class SuggestionPublisher(
     private val bot: TelegramBot,
     private val suggestionsRepo: SuggestionsRepo,
     private val cachingChatId: IdChatIdentifier
