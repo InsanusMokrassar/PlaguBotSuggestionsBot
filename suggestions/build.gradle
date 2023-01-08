@@ -10,6 +10,13 @@ kotlin {
         commonMain {
             dependencies {
                 api project(":plagubot.suggestionsbot.common")
+                api libs.plagubot.plugins.inline.queries
+            }
+        }
+        jvmMain {
+            dependencies {
+                api libs.microutils.repos.exposed
+                api libs.plagubot.plugin
             }
         }
     }

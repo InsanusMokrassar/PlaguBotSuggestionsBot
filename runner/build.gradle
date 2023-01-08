@@ -12,7 +12,7 @@ kotlin {
             dependencies {
                 api project(":plagubot.suggestionsbot.common")
                 api project(":plagubot.suggestionsbot.registrar")
-                api libs.plaguposter.posts
+                api project(":plagubot.suggestionsbot.suggestions")
             }
         }
     }

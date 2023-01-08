@@ -2,16 +2,15 @@ package dev.inmo.plagubot.suggestionsbot.registrar
 
 import dev.inmo.micro_utils.coroutines.firstOf
 import dev.inmo.micro_utils.fsm.common.State
-import dev.inmo.micro_utils.repos.create
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.plugins.inline.queries.models.Format
 import dev.inmo.plagubot.plugins.inline.queries.models.OfferTemplate
 import dev.inmo.plagubot.plugins.inline.queries.repos.InlineTemplatesRepo
 import dev.inmo.plaguposter.common.ChatConfig
 import dev.inmo.plaguposter.common.FirstSourceIsCommandsFilter
-import dev.inmo.plaguposter.posts.models.NewPost
-import dev.inmo.plaguposter.posts.models.PostContentInfo
-import dev.inmo.plaguposter.posts.repo.PostsRepo
+import dev.inmo.plaguposter.posts.models.NewSuggestion
+import dev.inmo.plaguposter.posts.models.SuggestionContentInfo
+import dev.inmo.plaguposter.posts.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.send.send
@@ -46,7 +45,7 @@ object Plugin : Plugin {
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
         val config = koin.get<ChatConfig>()
-        val postsRepo = koin.get<PostsRepo>()
+        val postsRepo = koin.get<SuggestionsRepo>()
 
         strictlyOn {state: RegistrationState.InProcess ->
             val buttonUuid = "finish"
@@ -116,7 +115,7 @@ object Plugin : Plugin {
                     state.messages
                 )
             } ?.flatMap {
-                PostContentInfo.fromMessage(it)
+                SuggestionContentInfo.fromMessage(it)
             } ?: return@strictlyOn RegistrationState.Finish(
                 state.context,
                 emptyList()
@@ -134,7 +133,7 @@ object Plugin : Plugin {
             when {
                 state.messages.isEmpty() -> send(state.context, "Suggestion has been cancelled")
                 else -> postsRepo.create(
-                    NewPost(state.messages)
+                    NewSuggestion(state.messages)
                 )
             }
             null
@@ -147,7 +146,7 @@ object Plugin : Plugin {
         onContentMessage (
             initialFilter = { it.chat.id != config.sourceChatId && !FirstSourceIsCommandsFilter(it) }
         ) {
-            startChain(RegistrationState.InProcess(it.chat.id, PostContentInfo.fromMessage(it)))
+            startChain(RegistrationState.InProcess(it.chat.id, SuggestionContentInfo.fromMessage(it)))
         }
         koin.getOrNull<InlineTemplatesRepo>() ?.apply {
             addTemplate(

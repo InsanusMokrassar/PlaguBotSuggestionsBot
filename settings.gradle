@@ -3,8 +3,8 @@ rootProject.name = 'plagubot.suggestionsbot'
 String[] includes = [
     ":common",
 
+    ":suggestions",
     ":registrar",
-    ":suggestions:validator",
 
     ":runner",
 ]

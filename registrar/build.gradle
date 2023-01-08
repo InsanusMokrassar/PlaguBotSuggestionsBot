@@ -10,7 +10,7 @@ kotlin {
         commonMain {
             dependencies {
                 api project(":plagubot.suggestionsbot.common")
-                api libs.plaguposter.posts
+                api project(":plagubot.suggestionsbot.suggestions")
             }
         }
     }

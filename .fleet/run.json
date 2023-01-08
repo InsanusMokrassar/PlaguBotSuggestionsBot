@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "Run",
+            "program": "./gradlew",
+            "args": ["run", "--args=\"runner/sample.config.json\""],
+        },
+
+    ]
+}
