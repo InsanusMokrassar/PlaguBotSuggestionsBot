@@ -1,16 +1,20 @@
 package dev.inmo.plagubot.suggestionsbot.registrar
 
+import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.coroutines.firstOf
+import dev.inmo.micro_utils.coroutines.launchSafelyWithoutExceptions
+import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions
 import dev.inmo.micro_utils.fsm.common.State
+import dev.inmo.micro_utils.repos.create
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.plugins.inline.queries.models.Format
 import dev.inmo.plagubot.plugins.inline.queries.models.OfferTemplate
 import dev.inmo.plagubot.plugins.inline.queries.repos.InlineTemplatesRepo
-import dev.inmo.plaguposter.common.ChatConfig
-import dev.inmo.plaguposter.common.FirstSourceIsCommandsFilter
-import dev.inmo.plaguposter.posts.models.NewSuggestion
-import dev.inmo.plaguposter.posts.models.SuggestionContentInfo
-import dev.inmo.plaguposter.posts.repo.SuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestons.models.NewSuggestion
+import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionContentInfo
+import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionStatus
+import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
+import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.send.send
@@ -19,17 +23,26 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitContentMe
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.strictlyOn
+import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.CommonMessageFilter
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onCommand
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onContentMessage
+import dev.inmo.tgbotapi.extensions.behaviour_builder.utils.not
+import dev.inmo.tgbotapi.extensions.behaviour_builder.utils.times
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameChat
 import dev.inmo.tgbotapi.extensions.utils.extensions.sameMessage
 import dev.inmo.tgbotapi.extensions.utils.textContentOrNull
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.flatInlineKeyboard
+import dev.inmo.tgbotapi.extensions.utils.withContentOrNull
+import dev.inmo.tgbotapi.types.chat.PrivateChat
 import dev.inmo.tgbotapi.types.message.abstracts.ContentMessage
 import dev.inmo.tgbotapi.types.message.content.MessageContent
+import dev.inmo.tgbotapi.types.message.content.TextContent
+import dev.inmo.tgbotapi.types.message.textsources.BotCommandTextSource
+import dev.inmo.tgbotapi.types.toChatId
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.regular
+import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
@@ -44,12 +57,36 @@ object Plugin : Plugin {
     }
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
-        val config = koin.get<ChatConfig>()
+        val config = koin.get<ChatsConfig>()
         val postsRepo = koin.get<SuggestionsRepo>()
 
-        strictlyOn {state: RegistrationState.InProcess ->
+        strictlyOn { state: RegistrationState.InProcess ->
+            var state = state.copy()
             val buttonUuid = "finish"
             val cancelUuid = "cancel"
+            val toggleAnonymousUuid = "toggleAnon"
+
+            fun buildKeyboard() = flatInlineKeyboard {
+                if (state.messages.isNotEmpty()) {
+                    dataButton(
+                        "Finish",
+                        buttonUuid
+                    )
+                }
+                dataButton(
+                    "Cancel",
+                    cancelUuid
+                )
+                val anonStatus = if (state.isAnonymous) {
+                    "✅"
+                } else {
+                    "❌"
+                }
+                dataButton(
+                    "$anonStatus Anonymous",
+                    toggleAnonymousUuid
+                )
+            }
 
             val messageToDelete = send(
                 state.context,
@@ -60,21 +97,16 @@ object Plugin : Plugin {
                         regular("Ok, send me your messages for new suggestion")
                     }
                 },
-                replyMarkup = if (state.messages.isNotEmpty()) {
-                    flatInlineKeyboard {
-                        dataButton(
-                            "Finish",
-                            buttonUuid
-                        )
-                        dataButton(
-                            "Cancel",
-                            cancelUuid
-                        )
-                    }
-                } else {
-                    null
-                }
+                replyMarkup = buildKeyboard()
             )
+
+            waitMessageDataCallbackQuery().filter {
+                it.message.sameMessage(messageToDelete) && it.data == toggleAnonymousUuid
+            }.subscribeSafelyWithoutExceptions(this) {
+                state = state.copy(isAnonymous = !state.isAnonymous)
+                answer(it)
+                edit(messageToDelete, buildKeyboard())
+            }
 
             val newMessagesInfo = firstOf<List<ContentMessage<*>>?> {
                 add {
@@ -112,18 +144,21 @@ object Plugin : Plugin {
                 edit(messageToDelete, "Ok, finishing your request")
                 return@strictlyOn RegistrationState.Finish(
                     state.context,
-                    state.messages
+                    state.messages,
+                    state.isAnonymous
                 )
             } ?.flatMap {
                 SuggestionContentInfo.fromMessage(it)
             } ?: return@strictlyOn RegistrationState.Finish(
                 state.context,
-                emptyList()
+                emptyList(),
+                state.isAnonymous
             )
 
             RegistrationState.InProcess(
                 state.context,
-                state.messages + newMessagesInfo
+                state.messages + newMessagesInfo,
+                state.isAnonymous
             ).also {
                 delete(messageToDelete)
             }
@@ -133,20 +168,25 @@ object Plugin : Plugin {
             when {
                 state.messages.isEmpty() -> send(state.context, "Suggestion has been cancelled")
                 else -> postsRepo.create(
-                    NewSuggestion(state.messages)
+                    NewSuggestion(SuggestionStatus.Created(DateTime.now()), state.context, state.isAnonymous, state.messages)
                 )
             }
             null
         }
 
-        onCommand("start_suggestion", initialFilter = { it.chat.id != config.sourceChatId }) {
-            startChain(RegistrationState.InProcess(it.chat.id, emptyList()))
+        val registrarCommandsFilter: CommonMessageFilter<*> = CommonMessageFilter { !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat }
+        val firstMessageNotCommandFilter: CommonMessageFilter<*> = CommonMessageFilter {
+            it.withContentOrNull<TextContent>() ?.let { it.content.textSources.firstOrNull() is BotCommandTextSource } != true
+        }
+
+        onCommand("start_suggestion", initialFilter = registrarCommandsFilter) {
+            startChain(RegistrationState.InProcess(it.chat.id.toChatId(), emptyList()))
         }
 
         onContentMessage (
-            initialFilter = { it.chat.id != config.sourceChatId && !FirstSourceIsCommandsFilter(it) }
+            initialFilter = registrarCommandsFilter * !firstMessageNotCommandFilter
         ) {
-            startChain(RegistrationState.InProcess(it.chat.id, SuggestionContentInfo.fromMessage(it)))
+            startChain(RegistrationState.InProcess(it.chat.id.toChatId(), SuggestionContentInfo.fromMessage(it)))
         }
         koin.getOrNull<InlineTemplatesRepo>() ?.apply {
             addTemplate(
