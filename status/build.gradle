@@ -7,11 +7,11 @@ apply from: "$mppJavaProjectPresetPath"
 
 kotlin {
     sourceSets {
-        // Some other code
         commonMain {
             dependencies {
-                api libs.microutils.koin
-                api libs.plagubot.plugin
+                api project(":plagubot.suggestionsbot.common")
+                api project(":plagubot.suggestionsbot.suggestions")
+                api libs.plagubot.plugins.inline.buttons
             }
         }
     }

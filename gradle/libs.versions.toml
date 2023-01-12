@@ -37,10 +37,12 @@ android-test-espresso-core = { module = "androidx.test.espresso:espresso-core", 
 plagubot-plugin = { module = "dev.inmo:plagubot.plugin", version.ref = "plagubot" }
 plagubot-bot = { module = "dev.inmo:plagubot.bot", version.ref = "plagubot" }
 plagubot-plugins-inline-queries = { module = "dev.inmo:plagubot.plugins.inline.queries", version.ref = "plagubot-plugins" }
+plagubot-plugins-inline-buttons = { module = "dev.inmo:plagubot.plugins.inline.buttons", version.ref = "plagubot-plugins" }
 
 psql = { module = "org.postgresql:postgresql", version.ref = "psql" }
 
 microutils-repos-exposed = { module = "dev.inmo:micro_utils.repos.exposed", version.ref = "microutils" }
+microutils-koin = { module = "dev.inmo:micro_utils.koin", version.ref = "microutils" }
 
 #plaguposter-posts = { module = "dev.inmo:plaguposter.posts", version.ref = "plaguposter" }
 #plaguposter-posts-registrar = { module = "dev.inmo:plaguposter.posts_registrar", version.ref = "plaguposter" }
