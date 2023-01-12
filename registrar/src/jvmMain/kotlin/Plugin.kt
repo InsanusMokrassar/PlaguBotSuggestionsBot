@@ -2,7 +2,6 @@ package dev.inmo.plagubot.suggestionsbot.registrar
 
 import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.coroutines.firstOf
-import dev.inmo.micro_utils.coroutines.launchSafelyWithoutExceptions
 import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions
 import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.micro_utils.repos.create
@@ -43,8 +42,10 @@ import dev.inmo.tgbotapi.types.toChatId
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.regular
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
@@ -110,11 +111,11 @@ object Plugin : Plugin {
 
             val newMessagesInfo = firstOf<List<ContentMessage<*>>?> {
                 add {
-                    listOf(
-                        waitContentMessage().filter {
-                            it.chat.id == state.context && it.content.textContentOrNull() ?.text != "/finish" && it.content.textContentOrNull() ?.text != "/cancel"
-                        }.take(1).first()
-                    )
+                    val result = mutableListOf<ContentMessage<MessageContent>>()
+                    waitContentMessage().filter {
+                        it.chat.id == state.context && it.content.textContentOrNull() ?.text != "/finish" && it.content.textContentOrNull() ?.text != "/cancel"
+                    }.onEach { result.add(it) }.debounce(1000L).first()
+                    result
                 }
                 add {
                     val cancelPressed = waitMessageDataCallbackQuery().filter {
@@ -147,8 +148,8 @@ object Plugin : Plugin {
                     state.messages,
                     state.isAnonymous
                 )
-            } ?.flatMap {
-                SuggestionContentInfo.fromMessage(it)
+            } ?.flatMapIndexed { i, it ->
+                SuggestionContentInfo.fromMessage(it, state.messages.size + i)
             } ?: return@strictlyOn RegistrationState.Finish(
                 state.context,
                 emptyList(),
@@ -176,7 +177,7 @@ object Plugin : Plugin {
 
         val registrarCommandsFilter: CommonMessageFilter<*> = CommonMessageFilter { !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat }
         val firstMessageNotCommandFilter: CommonMessageFilter<*> = CommonMessageFilter {
-            it.withContentOrNull<TextContent>() ?.let { it.content.textSources.firstOrNull() is BotCommandTextSource } != true
+            it.withContentOrNull<TextContent>() ?.let { it.content.textSources.firstOrNull() is BotCommandTextSource } == true
         }
 
         onCommand("start_suggestion", initialFilter = registrarCommandsFilter) {
@@ -186,7 +187,7 @@ object Plugin : Plugin {
         onContentMessage (
             initialFilter = registrarCommandsFilter * !firstMessageNotCommandFilter
         ) {
-            startChain(RegistrationState.InProcess(it.chat.id.toChatId(), SuggestionContentInfo.fromMessage(it)))
+            startChain(RegistrationState.InProcess(it.chat.id.toChatId(), SuggestionContentInfo.fromMessage(it, 0)))
         }
         koin.getOrNull<InlineTemplatesRepo>() ?.apply {
             addTemplate(
@@ -205,9 +206,9 @@ object Plugin : Plugin {
             )
             addTemplate(
                 OfferTemplate(
-                    "Finish suggestion creating",
+                    "Cancel suggestion creating",
                     listOf(Format("/cancel")),
-                    "Finish creating of complex suggestion"
+                    "Cancel creating of complex suggestion"
                 )
             )
         }

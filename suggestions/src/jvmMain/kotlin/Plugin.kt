@@ -3,8 +3,10 @@ package dev.inmo.plagubot.suggestionsbot.suggestons
 import dev.inmo.kslog.common.logger
 import dev.inmo.kslog.common.w
 import dev.inmo.plagubot.Plugin
+import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.suggestons.exposed.ExposedSuggestionsRepo
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.*
+import dev.inmo.plagubot.suggestionsbot.suggestons.sending.SuggestionPublisher
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
@@ -14,30 +16,20 @@ import org.koin.core.module.Module
 import org.koin.dsl.binds
 
 object Plugin : Plugin {
-    @Serializable
-    class Config()
     override fun Module.setupDI(database: Database, params: JsonObject) {
-        val configJson = params["posts"] ?: this@Plugin.let {
-            it.logger.w {
-                "Unable to load posts plugin due to absence of `posts` key in config"
-            }
-            return
-        }
-        single { get<Json>().decodeFromJsonElement(Config.serializer(), configJson) }
         single { ExposedSuggestionsRepo(database) } binds arrayOf(
             SuggestionsRepo::class,
             ReadSuggestionsRepo::class,
             WriteSuggestionsRepo::class,
         )
-//        single {
-//            val config = get<Config>()
-//            SuggestionPublisher(get(), get(), config.chats.cacheChatId, config.chats.targetChatId, config.deleteAfterPublishing)
-//        }
+        single {
+            val config = get<ChatsConfig>()
+            SuggestionPublisher(get(), get(), config.cacheChat)
+        }
     }
 
     override suspend fun BehaviourContext.setupBotPlugin(koin: Koin) {
         val postsRepo = koin.get<SuggestionsRepo>()
-        val config = koin.get<Config>()
 
 //        if (config.autoRemoveMessages) {
 //            postsRepo.removedPostsFlow.subscribeSafelyWithoutExceptions(this) {

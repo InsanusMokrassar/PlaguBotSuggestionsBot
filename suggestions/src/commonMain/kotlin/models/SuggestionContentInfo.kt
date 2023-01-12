@@ -17,21 +17,21 @@ data class SuggestionContentInfo(
     val order: Int
 ) {
     companion object {
-        private fun fromMessage(message: ContentMessage<*>, order: Int) = SuggestionContentInfo(
+        private fun generateFromMessage(message: ContentMessage<*>, order: Int) = SuggestionContentInfo(
             message.chat.id,
             message.messageId,
             message.possiblyMediaGroupMessageOrNull() ?.mediaGroupId,
             order
         )
-        fun fromMessage(message: ContentMessage<*>): List<SuggestionContentInfo> {
+        fun fromMessage(message: ContentMessage<*>, baseOrder: Int): List<SuggestionContentInfo> {
             val content = message.content
 
             return if (content is MediaGroupContent<*>) {
                 content.group.mapIndexed { i, it ->
-                    fromMessage(it.sourceMessage, i)
+                    generateFromMessage(it.sourceMessage, i + baseOrder)
                 }
             } else {
-                listOf(fromMessage(message, 0))
+                listOf(generateFromMessage(message, baseOrder))
             }
         }
     }

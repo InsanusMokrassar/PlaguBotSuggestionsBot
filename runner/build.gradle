@@ -1,19 +1,28 @@
 plugins {
-    id "org.jetbrains.kotlin.multiplatform"
+    id "org.jetbrains.kotlin.jvm"
     id "org.jetbrains.kotlin.plugin.serialization"
+    id 'application'
 }
 
-apply from: "$mppJavaProjectPresetPath"
+//apply from: "$mppJavaProjectPresetPath"
 
-kotlin {
-    sourceSets {
-        // Some other code
-        commonMain {
-            dependencies {
-                api project(":plagubot.suggestionsbot.common")
-                api project(":plagubot.suggestionsbot.registrar")
-                api project(":plagubot.suggestionsbot.suggestions")
-            }
-        }
-    }
+//kotlin {
+//    sourceSets {
+//        // Some other code
+//        commonMain {
+//        }
+//    }
+//}
+
+dependencies {
+    api project(":plagubot.suggestionsbot.common")
+    api project(":plagubot.suggestionsbot.registrar")
+    api project(":plagubot.suggestionsbot.suggestions")
+
+    api libs.plagubot.bot
+    api libs.psql
+}
+
+application {
+    mainClassName = 'dev.inmo.plagubot.AppKt'
 }
