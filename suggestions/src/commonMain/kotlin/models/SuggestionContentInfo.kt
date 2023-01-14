@@ -1,5 +1,6 @@
 package dev.inmo.plagubot.suggestionsbot.suggestons.models
 
+import dev.inmo.plagubot.suggestionsbot.common.MessageInfo
 import dev.inmo.tgbotapi.extensions.utils.possiblyMediaGroupMessageOrNull
 import dev.inmo.tgbotapi.types.FullChatIdentifierSerializer
 import dev.inmo.tgbotapi.types.IdChatIdentifier

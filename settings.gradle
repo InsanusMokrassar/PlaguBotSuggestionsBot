@@ -5,7 +5,10 @@ String[] includes = [
 
     ":suggestions",
     ":registrar",
-    ":status",
+    ":reviews",
+//    ":status:common",
+//    ":status:user",
+//    ":status:admin",
 
     ":runner",
 ]

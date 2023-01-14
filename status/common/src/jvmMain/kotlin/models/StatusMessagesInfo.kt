@@ -1,4 +1,4 @@
-package dev.inmo.plagubot.suggestionsbot.status.models
+package dev.inmo.plagubot.suggestionsbot.status.common.models
 
 import dev.inmo.plagubot.suggestionsbot.common.MessageInfo
 import kotlinx.serialization.Serializable

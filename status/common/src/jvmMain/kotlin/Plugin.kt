@@ -1,4 +1,4 @@
-package dev.inmo.plagubot.suggestionsbot.status
+package dev.inmo.plagubot.suggestionsbot.status.common
 
 import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions
 import dev.inmo.micro_utils.fsm.common.State
@@ -6,8 +6,8 @@ import dev.inmo.micro_utils.koin.getAllDistinct
 import dev.inmo.micro_utils.koin.singleWithBinds
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
-import dev.inmo.plagubot.suggestionsbot.status.repo.ExposedStatusesRepo
-import dev.inmo.plagubot.suggestionsbot.status.repo.StatusesRepo
+import dev.inmo.plagubot.suggestionsbot.status.common.repo.ExposedStatusesRepo
+import dev.inmo.plagubot.suggestionsbot.status.common.repo.StatusesRepo
 import dev.inmo.plagubot.suggestionsbot.suggestons.models.RegisteredSuggestion
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM

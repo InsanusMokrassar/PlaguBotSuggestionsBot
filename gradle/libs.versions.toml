@@ -9,7 +9,7 @@ plaguposter = "0.0.9-branch_0.0.9-build2"
 
 psql = "42.5.0"
 
-microutils = "0.16.5"
+microutils = "0.16.6-branch_0.16.6-build311"
 
 dokka = "1.7.20"
 

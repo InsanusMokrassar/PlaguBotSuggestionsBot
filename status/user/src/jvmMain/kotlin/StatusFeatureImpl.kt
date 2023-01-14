@@ -2,7 +2,7 @@ package dev.inmo.plagubot.suggestionsbot.status
 
 import dev.inmo.micro_utils.coroutines.runCatchingSafely
 import dev.inmo.plagubot.suggestionsbot.common.MessageInfo
-import dev.inmo.plagubot.suggestionsbot.status.repo.StatusesRepo
+import dev.inmo.plagubot.suggestionsbot.status.user.repo.StatusesRepo
 import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionId
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.ReadSuggestionsRepo
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
