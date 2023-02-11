@@ -1,7 +1,9 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.models
+package dev.inmo.plagubot.suggestionsbot.suggestions.models
 
 import dev.inmo.plagubot.suggestionsbot.common.MessageInfo
 import dev.inmo.tgbotapi.extensions.utils.possiblyMediaGroupMessageOrNull
+import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
+import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.types.FullChatIdentifierSerializer
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
@@ -11,17 +13,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SuggestionContentInfo(
-    @Serializable(FullChatIdentifierSerializer::class)
-    val chatId: IdChatIdentifier,
-    val messageId: MessageIdentifier,
-    val group: String?,
+    val messageMetaInfo: MessageMetaInfo,
     val order: Int
 ) {
     companion object {
         private fun generateFromMessage(message: ContentMessage<*>, order: Int) = SuggestionContentInfo(
-            message.chat.id,
-            message.messageId,
-            message.possiblyMediaGroupMessageOrNull() ?.mediaGroupId,
+            MessageMetaInfo(message),
             order
         )
         fun fromMessage(message: ContentMessage<*>, baseOrder: Int): List<SuggestionContentInfo> {

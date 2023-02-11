@@ -5,7 +5,7 @@ Main plugin, which should be included in your config.
 ## Plugin name
 
 ```
-dev.inmo.plagubot.suggestionsbot.suggestons.Plugin
+dev.inmo.plagubot.suggestionsbot.suggestions.Plugin
 ```
 
 ## Plugin config

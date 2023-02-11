@@ -3,9 +3,9 @@ package dev.inmo.plagubot.suggestionsbot.status
 import dev.inmo.micro_utils.coroutines.runCatchingSafely
 import dev.inmo.plagubot.suggestionsbot.common.MessageInfo
 import dev.inmo.plagubot.suggestionsbot.status.user.repo.StatusesRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionId
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.ReadSuggestionsRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.ReadSuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext

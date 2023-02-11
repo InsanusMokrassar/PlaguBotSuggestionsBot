@@ -1,4 +1,4 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.panel
+package dev.inmo.plagubot.suggestionsbot.suggestions.panel
 
 import com.benasher44.uuid.uuid4
 import dev.inmo.micro_utils.coroutines.runCatchingSafely
@@ -12,9 +12,9 @@ import dev.inmo.micro_utils.repos.value
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plaguposter.common.ChatConfig
 import dev.inmo.plaguposter.common.UnsuccessfulSymbol
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.PostId
-import dev.inmo.plagubot.suggestionsbot.suggestons.panel.repos.PostsMessages
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.PostsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.PostId
+import dev.inmo.plagubot.suggestionsbot.suggestions.panel.repos.PostsMessages
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.PostsRepo
 import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit

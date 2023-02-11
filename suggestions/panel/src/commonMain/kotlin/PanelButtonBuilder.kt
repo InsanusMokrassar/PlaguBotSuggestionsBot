@@ -1,6 +1,6 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.panel
+package dev.inmo.plagubot.suggestionsbot.suggestions.panel
 
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.RegisteredPost
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredPost
 import dev.inmo.tgbotapi.types.buttons.InlineKeyboardButtons.InlineKeyboardButton
 
 interface PanelButtonBuilder {

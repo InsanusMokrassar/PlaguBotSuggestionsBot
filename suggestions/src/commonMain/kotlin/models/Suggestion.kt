@@ -1,4 +1,4 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.models
+package dev.inmo.plagubot.suggestionsbot.suggestions.models
 
 import com.soywiz.klock.DateTime
 import dev.inmo.tgbotapi.types.UserId

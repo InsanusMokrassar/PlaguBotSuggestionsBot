@@ -18,6 +18,8 @@ dependencies {
     api project(":plagubot.suggestionsbot.common")
     api project(":plagubot.suggestionsbot.registrar")
     api project(":plagubot.suggestionsbot.suggestions")
+    api project(":plagubot.suggestionsbot.reviews")
+    api project(":plagubot.suggestionsbot.publisher")
 
     api libs.plagubot.bot
     api libs.psql

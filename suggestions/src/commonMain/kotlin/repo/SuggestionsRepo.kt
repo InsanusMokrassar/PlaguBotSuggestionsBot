@@ -1,9 +1,9 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.repo
+package dev.inmo.plagubot.suggestionsbot.suggestions.repo
 
 import dev.inmo.micro_utils.repos.ReadCRUDRepo
 import dev.inmo.micro_utils.repos.WriteCRUDRepo
 import dev.inmo.micro_utils.repos.CRUDRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.*
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import com.soywiz.klock.DateTime
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
@@ -29,6 +29,8 @@ interface ReadSuggestionsRepo : ReadCRUDRepo<RegisteredSuggestion, SuggestionId>
 
 interface WriteSuggestionsRepo : WriteCRUDRepo<RegisteredSuggestion, SuggestionId, NewSuggestion> {
     val removedPostsFlow: Flow<RegisteredSuggestion>
+
+    suspend fun updateStatus(suggestionId: SuggestionId, status: SuggestionStatus): RegisteredSuggestion?
 }
 
 interface SuggestionsRepo : CRUDRepo<RegisteredSuggestion, SuggestionId, NewSuggestion>, ReadSuggestionsRepo, WriteSuggestionsRepo {

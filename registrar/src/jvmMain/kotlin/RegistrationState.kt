@@ -1,7 +1,7 @@
 package dev.inmo.plagubot.suggestionsbot.registrar
 
 import dev.inmo.micro_utils.fsm.common.State
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionContentInfo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionContentInfo
 import dev.inmo.tgbotapi.types.FullChatIdentifierSerializer
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.UserId

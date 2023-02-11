@@ -2,7 +2,7 @@ package dev.inmo.plagubot.suggestionsbot.status.common.repo
 
 import dev.inmo.micro_utils.repos.exposed.keyvalue.AbstractExposedKeyValueRepo
 import dev.inmo.plagubot.suggestionsbot.common.MessageInfo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionId
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageId
 import org.jetbrains.exposed.sql.Column

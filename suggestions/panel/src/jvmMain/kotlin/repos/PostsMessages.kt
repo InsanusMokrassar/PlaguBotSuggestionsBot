@@ -1,9 +1,9 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.panel.repos
+package dev.inmo.plagubot.suggestionsbot.suggestions.panel.repos
 
 import dev.inmo.micro_utils.repos.KeyValueRepo
 import dev.inmo.micro_utils.repos.exposed.keyvalue.ExposedKeyValueRepo
 import dev.inmo.micro_utils.repos.mappers.withMapper
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.PostId
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.PostId
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.FullChatIdentifierSerializer
 import dev.inmo.tgbotapi.types.IdChatIdentifier

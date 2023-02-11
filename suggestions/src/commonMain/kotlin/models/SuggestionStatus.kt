@@ -1,4 +1,4 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.models
+package dev.inmo.plagubot.suggestionsbot.suggestions.models
 
 import com.soywiz.klock.DateTime
 import kotlinx.serialization.SerialName
@@ -18,7 +18,7 @@ sealed interface SuggestionStatus {
         override val dateTime: DateTime
     ) : Cancelable
     @Serializable
-    @SerialName("C")
+    @SerialName("OR")
     data class OnReview(
         @Serializable(DateTimeSerializer::class)
         override val dateTime: DateTime
@@ -30,7 +30,7 @@ sealed interface SuggestionStatus {
     }
 
     @Serializable
-    @SerialName("C")
+    @SerialName("A")
     data class Accepted(
         override val reviewerId: UserId,
         @Serializable(DateTimeSerializer::class)
@@ -38,7 +38,7 @@ sealed interface SuggestionStatus {
     ) : Reviewed
 
     @Serializable
-    @SerialName("C")
+    @SerialName("R")
     data class Rejected(
         override val reviewerId: UserId,
         @Serializable(DateTimeSerializer::class)
@@ -46,7 +46,7 @@ sealed interface SuggestionStatus {
     ) : Reviewed
 
     @Serializable
-    @SerialName("C")
+    @SerialName("B")
     data class Banned(
         override val reviewerId: UserId,
         @Serializable(DateTimeSerializer::class)

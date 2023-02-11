@@ -8,8 +8,8 @@ import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.status.user.repo.ExposedStatusesRepo
 import dev.inmo.plagubot.suggestionsbot.status.user.repo.StatusesRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.RegisteredSuggestion
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database

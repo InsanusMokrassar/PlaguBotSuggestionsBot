@@ -3,7 +3,7 @@ package dev.inmo.plagubot.suggestionsbot.reviews.repo
 import dev.inmo.micro_utils.repos.exposed.eqOrIsNull
 import dev.inmo.micro_utils.repos.exposed.onetomany.AbstractExposedKeyValuesRepo
 import dev.inmo.plagubot.suggestionsbot.reviews.models.ReviewContentInfo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionId
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database

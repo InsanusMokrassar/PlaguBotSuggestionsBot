@@ -1,8 +1,8 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.exposed
+package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 
 import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.repos.exposed.*
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.*
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import dev.inmo.tgbotapi.types.UserId
 import org.jetbrains.exposed.sql.*
 

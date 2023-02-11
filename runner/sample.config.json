@@ -9,13 +9,17 @@
   "plugins": [
     "dev.inmo.plagubot.suggestionsbot.common.Plugin",
     "dev.inmo.plagubot.suggestionsbot.registrar.Plugin",
-    "dev.inmo.plaguposter.posts.Plugin"
+    "dev.inmo.plagubot.suggestionsbot.reviews.Plugin",
+    "dev.inmo.plagubot.suggestionsbot.publisher.Plugin",
+    "dev.inmo.plagubot.suggestionsbot.suggestions.Plugin"
   ],
-  "posts": {
-    "chats": {
-      "targetChat": 12345678,
-      "cacheChat": 12345678,
-      "sourceChat": 12345678
-    }
+  "chats": {
+    "targetChat": 12345678,
+    "cacheChat": 12345678,
+    "suggestionsChat": 12345678
+  },
+  "publisher": {
+    "beforeMessage": "/start_post",
+    "afterMessage": "/finish_post"
   }
 }

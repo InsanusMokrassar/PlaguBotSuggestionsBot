@@ -9,10 +9,10 @@ import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.plugins.inline.queries.models.Format
 import dev.inmo.plagubot.plugins.inline.queries.models.OfferTemplate
 import dev.inmo.plagubot.plugins.inline.queries.repos.InlineTemplatesRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.NewSuggestion
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionContentInfo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionStatus
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.NewSuggestion
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionContentInfo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionStatus
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.api.answers.answer
 import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit
@@ -98,7 +98,8 @@ object Plugin : Plugin {
                         regular("Ok, send me your messages for new suggestion")
                     }
                 },
-                replyMarkup = buildKeyboard()
+                replyMarkup = buildKeyboard(),
+                replyToMessageId = state.messages.lastOrNull() ?.messageMetaInfo ?.messageId
             )
 
             waitMessageDataCallbackQuery().filter {
@@ -175,7 +176,9 @@ object Plugin : Plugin {
             null
         }
 
-        val registrarCommandsFilter: CommonMessageFilter<*> = CommonMessageFilter { !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat }
+        val registrarCommandsFilter: CommonMessageFilter<*> = CommonMessageFilter {
+            !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat
+        }
         val firstMessageNotCommandFilter: CommonMessageFilter<*> = CommonMessageFilter {
             it.withContentOrNull<TextContent>() ?.let { it.content.textSources.firstOrNull() is BotCommandTextSource } == true
         }

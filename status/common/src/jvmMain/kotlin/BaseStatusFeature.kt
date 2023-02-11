@@ -1,8 +1,8 @@
 package dev.inmo.plagubot.suggestionsbot.status.common
 
 import dev.inmo.plagubot.suggestionsbot.status.common.repo.StatusesRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.SuggestionId
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import dev.inmo.tgbotapi.types.ChatId
 import dev.inmo.tgbotapi.types.IdChatIdentifier

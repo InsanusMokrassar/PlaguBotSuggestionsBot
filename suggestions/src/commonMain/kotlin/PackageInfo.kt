@@ -1,1 +1,1 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons
+package dev.inmo.plagubot.suggestionsbot.suggestions

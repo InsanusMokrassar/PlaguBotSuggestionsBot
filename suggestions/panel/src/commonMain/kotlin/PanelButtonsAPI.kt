@@ -1,6 +1,6 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.panel
+package dev.inmo.plagubot.suggestionsbot.suggestions.panel
 
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.PostId
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.PostId
 import dev.inmo.tgbotapi.types.buttons.InlineKeyboardButtons.CallbackDataInlineKeyboardButton
 import kotlinx.coroutines.flow.MutableSharedFlow
 

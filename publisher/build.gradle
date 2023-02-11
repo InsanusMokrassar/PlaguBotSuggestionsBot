@@ -3,20 +3,14 @@ plugins {
     id "org.jetbrains.kotlin.plugin.serialization"
 }
 
-apply from: "$mppProjectWithSerializationPresetPath"
+apply from: "$mppJavaProjectPresetPath"
 
 kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api project(":plaguposter.common")
+                api project(":plagubot.suggestionsbot.common")
                 api project(":plagubot.suggestionsbot.suggestions")
-                api libs.microutils.koin
-            }
-        }
-        jvmMain {
-            dependencies {
-                api libs.plagubot.plugins.inline.queries
             }
         }
     }

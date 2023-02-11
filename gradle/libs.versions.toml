@@ -3,9 +3,9 @@
 kotlin = "1.7.22"
 kotlin-serialization = "1.4.1"
 
-plagubot = "3.4.0"
+plagubot = "3.4.1"
 plagubot-plugins = "0.8.0"
-tgbotapi-libraries = "0.8.0"
+tgbotapi-libraries = "0.8.1"
 
 psql = "42.5.0"
 

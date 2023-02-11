@@ -1,12 +1,12 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.exposed
+package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 
 import com.benasher44.uuid.uuid4
 import dev.inmo.micro_utils.repos.UpdatedValuePair
 import dev.inmo.micro_utils.repos.exposed.AbstractExposedCRUDRepo
 import dev.inmo.micro_utils.repos.exposed.initTable
-import dev.inmo.plagubot.suggestionsbot.suggestons.exposed.ExposedStatusesRepo.Companion.statusType
-import dev.inmo.plagubot.suggestionsbot.suggestons.models.*
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedStatusesRepo.Companion.statusType
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
 import dev.inmo.tgbotapi.types.UserId
@@ -132,10 +132,10 @@ class ExposedSuggestionsRepo(
             post.content.forEach { contentInfo ->
                 insert {
                     it[suggestionIdColumn] = post.id.string
-                    it[chatIdColumn] = contentInfo.chatId.chatId
-                    it[threadIdColumn] = contentInfo.chatId.threadId
-                    it[messageIdColumn] = contentInfo.messageId
-                    it[groupColumn] = contentInfo.group
+                    it[chatIdColumn] = contentInfo.messageMetaInfo.chatId.chatId
+                    it[threadIdColumn] = contentInfo.messageMetaInfo.chatId.threadId
+                    it[messageIdColumn] = contentInfo.messageMetaInfo.messageId
+                    it[groupColumn] = contentInfo.messageMetaInfo.group
                     it[orderColumn] = contentInfo.order
                 }
             }
@@ -190,6 +190,16 @@ class ExposedSuggestionsRepo(
             _deletedObjectsIdsFlow.emit(it)
             _removedPostsFlow.emit(suggestions[it] ?: return@forEach)
         }
+    }
+
+    override suspend fun updateStatus(
+        suggestionId: SuggestionId,
+        status: SuggestionStatus
+    ): RegisteredSuggestion? = transaction(database) {
+        updateStatusWithoutTransaction(suggestionId, status)
+        select { selectById(suggestionId) }.limit(1).firstOrNull() ?.asObject
+    } ?.also {
+        _updatedObjectsFlow.emit(it)
     }
 
     override suspend fun getIdByChatAndMessage(chatId: IdChatIdentifier, messageId: MessageIdentifier): SuggestionId? {

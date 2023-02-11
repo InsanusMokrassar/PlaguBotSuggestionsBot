@@ -1,9 +1,9 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons
+package dev.inmo.plagubot.suggestionsbot.suggestions
 
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
-import dev.inmo.plagubot.suggestionsbot.suggestons.exposed.ExposedSuggestionsRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.repo.*
+import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedSuggestionsRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.repo.*
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import kotlinx.serialization.json.*
@@ -27,6 +27,9 @@ object Plugin : Plugin {
 
     override suspend fun BehaviourContext.setupBotPlugin(koin: Koin) {
         val postsRepo = koin.get<SuggestionsRepo>()
+        val chatsConfig = koin.get<ChatsConfig>()
+
+
 
 //        if (config.autoRemoveMessages) {
 //            postsRepo.removedPostsFlow.subscribeSafelyWithoutExceptions(this) {

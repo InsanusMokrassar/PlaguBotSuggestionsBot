@@ -1,4 +1,4 @@
-package dev.inmo.plagubot.suggestionsbot.suggestons.models
+package dev.inmo.plagubot.suggestionsbot.suggestions.models
 
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
