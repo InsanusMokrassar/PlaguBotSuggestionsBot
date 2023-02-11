@@ -5,7 +5,7 @@ kotlin-serialization = "1.4.1"
 
 plagubot = "3.4.0"
 plagubot-plugins = "0.8.0"
-plaguposter = "0.0.9-branch_0.0.9-build2"
+tgbotapi-libraries = "0.8.0"
 
 psql = "42.5.0"
 
@@ -27,13 +27,12 @@ plagubot-bot = { module = "dev.inmo:plagubot.bot", version.ref = "plagubot" }
 plagubot-plugins-inline-queries = { module = "dev.inmo:plagubot.plugins.inline.queries", version.ref = "plagubot-plugins" }
 plagubot-plugins-inline-buttons = { module = "dev.inmo:plagubot.plugins.inline.buttons", version.ref = "plagubot-plugins" }
 
+tgbotapi-libraries-resender = { module = "dev.inmo:tgbotapi.libraries.resender", version.ref = "tgbotapi-libraries" }
+
 psql = { module = "org.postgresql:postgresql", version.ref = "psql" }
 
 microutils-repos-exposed = { module = "dev.inmo:micro_utils.repos.exposed", version.ref = "microutils" }
 microutils-koin = { module = "dev.inmo:micro_utils.koin", version.ref = "microutils" }
-
-#plaguposter-posts = { module = "dev.inmo:plaguposter.posts", version.ref = "plaguposter" }
-#plaguposter-posts-registrar = { module = "dev.inmo:plaguposter.posts_registrar", version.ref = "plaguposter" }
 
 # buildscript classpaths
 

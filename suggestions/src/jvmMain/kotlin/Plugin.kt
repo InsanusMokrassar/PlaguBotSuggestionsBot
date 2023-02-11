@@ -4,8 +4,8 @@ import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.suggestons.exposed.ExposedSuggestionsRepo
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.*
-import dev.inmo.plagubot.suggestionsbot.suggestons.sending.MessagesPublisher
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
+import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
@@ -21,7 +21,7 @@ object Plugin : Plugin {
         )
         single {
             val config = get<ChatsConfig>()
-            MessagesPublisher(get(), get(), config.cacheChat)
+            MessagesResender(get(), config.cacheChat)
         }
     }
 

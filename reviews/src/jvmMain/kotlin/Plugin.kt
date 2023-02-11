@@ -7,8 +7,8 @@ import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.reviews.repo.ExposedReviewMessagesInfo
 import dev.inmo.plagubot.suggestionsbot.suggestons.repo.SuggestionsRepo
-import dev.inmo.plagubot.suggestionsbot.suggestons.sending.MessagesPublisher
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
+import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
@@ -23,7 +23,7 @@ object Plugin : Plugin {
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
         val suggestionsRepo = koin.get<SuggestionsRepo>()
-        val publisher = koin.get<MessagesPublisher>()
+        val publisher = koin.get<MessagesResender>()
         val chatsConfig = koin.get<ChatsConfig>()
 
         suggestionsRepo.newObjectsFlow.subscribeSafelyWithoutExceptions(this) {
