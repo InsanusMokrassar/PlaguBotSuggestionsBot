@@ -2,9 +2,11 @@ package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 
 import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.repos.exposed.*
+import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedStatusesRepo.Companion.statusType
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import dev.inmo.tgbotapi.types.UserId
 import org.jetbrains.exposed.sql.*
+import kotlin.reflect.KClass
 
 internal class ExposedStatusesRepo(
     override val database: Database,
@@ -26,13 +28,15 @@ internal class ExposedStatusesRepo(
     }
 
     companion object {
-        fun SuggestionStatus.statusType(): Byte = when (this) {
-            is SuggestionStatus.Created -> 0
-            is SuggestionStatus.OnReview -> 1
-            is SuggestionStatus.Accepted -> 2
-            is SuggestionStatus.Banned -> 3
-            is SuggestionStatus.Rejected -> 4
+        fun KClass<out SuggestionStatus>.statusType(): Byte = when (this) {
+            SuggestionStatus.Created::class -> 0
+            SuggestionStatus.OnReview::class -> 1
+            SuggestionStatus.Accepted::class -> 2
+            SuggestionStatus.Banned::class -> 3
+            SuggestionStatus.Rejected::class -> 4
+            else -> error("Unexpected type of suggestion status")
         }.toByte()
+        fun SuggestionStatus.statusType(): Byte = (this::class).statusType()
 
         fun Byte.status(
             dateTime: DateTime,

@@ -1,6 +1,7 @@
 package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 
 import com.benasher44.uuid.uuid4
+import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.repos.UpdatedValuePair
 import dev.inmo.micro_utils.repos.exposed.AbstractExposedCRUDRepo
 import dev.inmo.micro_utils.repos.exposed.initTable
@@ -10,6 +11,7 @@ import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
 import dev.inmo.tgbotapi.types.UserId
+import dev.inmo.tgbotapi.types.messageThreadIdField
 import kotlinx.coroutines.flow.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -228,5 +230,21 @@ class ExposedSuggestionsRepo(
         }
     }.sortedBy {
         it.dateTime
+    }
+
+    override suspend fun isUserHaveBannedSuggestions(userid: UserId): Boolean = transaction(database) {
+        select {
+            userIdColumn.eq(userid.chatId).and(
+                idColumn.inSubQuery(
+                    with(statusesRepo) {
+                        slice(suggestionIdColumn).select {
+                            statusTypeColumn.eq(
+                                SuggestionStatus.Banned::class.statusType()
+                            )
+                        }
+                    }
+                )
+            )
+        }.limit(1).count() > 0
     }
 }

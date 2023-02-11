@@ -2,6 +2,7 @@ package dev.inmo.plagubot.suggestionsbot.registrar
 
 import com.soywiz.klock.DateTime
 import dev.inmo.micro_utils.coroutines.firstOf
+import dev.inmo.micro_utils.coroutines.runCatchingSafely
 import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions
 import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.micro_utils.repos.create
@@ -46,7 +47,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
@@ -59,7 +59,7 @@ object Plugin : Plugin {
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
         val config = koin.get<ChatsConfig>()
-        val postsRepo = koin.get<SuggestionsRepo>()
+        val suggestionsRepo = koin.get<SuggestionsRepo>()
 
         strictlyOn { state: RegistrationState.InProcess ->
             var state = state.copy()
@@ -119,25 +119,25 @@ object Plugin : Plugin {
                     result
                 }
                 add {
-                    val cancelPressed = waitMessageDataCallbackQuery().filter {
+                    waitMessageDataCallbackQuery().filter {
                         it.message.sameMessage(messageToDelete) && it.data == cancelUuid
                     }.first()
                     null
                 }
                 add {
-                    val cancelPressed = waitTextMessage ().filter {
+                    waitTextMessage ().filter {
                         it.sameChat(messageToDelete) && it.content.text == "/cancel"
                     }.first()
                     null
                 }
                 add {
-                    val finishPressed = waitMessageDataCallbackQuery().filter {
+                    waitMessageDataCallbackQuery().filter {
                         it.message.sameMessage(messageToDelete) && it.data == buttonUuid
                     }.first()
                     emptyList<ContentMessage<MessageContent>>()
                 }
                 add {
-                    val finishPressed = waitTextMessage ().filter {
+                    waitTextMessage ().filter {
                         it.sameChat(messageToDelete) && it.content.text == "/finish"
                     }.first()
                     emptyList<ContentMessage<MessageContent>>()
@@ -155,7 +155,11 @@ object Plugin : Plugin {
                 state.context,
                 emptyList(),
                 state.isAnonymous
-            )
+            ).also {
+                runCatchingSafely {
+                    delete(messageToDelete)
+                }
+            }
 
             RegistrationState.InProcess(
                 state.context,
@@ -168,8 +172,10 @@ object Plugin : Plugin {
 
         strictlyOn { state: RegistrationState.Finish ->
             when {
-                state.messages.isEmpty() -> send(state.context, "Suggestion has been cancelled")
-                else -> postsRepo.create(
+                state.messages.isEmpty() -> {
+                    send(state.context, "Suggestion has been cancelled")
+                }
+                else -> suggestionsRepo.create(
                     NewSuggestion(SuggestionStatus.Created(DateTime.now()), state.context, state.isAnonymous, state.messages)
                 )
             }
@@ -177,7 +183,7 @@ object Plugin : Plugin {
         }
 
         val registrarCommandsFilter: CommonMessageFilter<*> = CommonMessageFilter {
-            !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat
+            !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat && !suggestionsRepo.isUserHaveBannedSuggestions(it.chat.id.toChatId())
         }
         val firstMessageNotCommandFilter: CommonMessageFilter<*> = CommonMessageFilter {
             it.withContentOrNull<TextContent>() ?.let { it.content.textSources.firstOrNull() is BotCommandTextSource } == true

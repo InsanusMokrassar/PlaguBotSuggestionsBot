@@ -7,6 +7,7 @@ import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import com.soywiz.klock.DateTime
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
+import dev.inmo.tgbotapi.types.UserId
 
 import kotlinx.coroutines.flow.Flow
 
@@ -25,6 +26,8 @@ interface ReadSuggestionsRepo : ReadCRUDRepo<RegisteredSuggestion, SuggestionId>
     suspend fun getSuggestionCreationTime(suggestionId: SuggestionId): DateTime? = getSuggestionStatusesHistory(suggestionId).firstOrNull {
         it is SuggestionStatus.Created
     } ?.dateTime
+
+    suspend fun isUserHaveBannedSuggestions(userid: UserId): Boolean
 }
 
 interface WriteSuggestionsRepo : WriteCRUDRepo<RegisteredSuggestion, SuggestionId, NewSuggestion> {
