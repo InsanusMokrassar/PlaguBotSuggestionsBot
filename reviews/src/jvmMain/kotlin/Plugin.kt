@@ -1,13 +1,18 @@
 package dev.inmo.plagubot.suggestionsbot.reviews
 
 import com.soywiz.klock.DateTime
+import dev.inmo.micro_utils.coroutines.launchSafelyWithoutExceptions
 import dev.inmo.micro_utils.coroutines.runCatchingSafely
 import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions
 import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.micro_utils.koin.singleWithBinds
+import dev.inmo.micro_utils.pagination.utils.doForAllWithNextPaging
+import dev.inmo.micro_utils.repos.set
+import dev.inmo.micro_utils.repos.unset
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.reviews.repo.ExposedReviewMessagesInfo
+import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.SuggestionsMessageMetaInfosExposedRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionStatus
@@ -22,6 +27,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.behaviour_builder.oneOf
 import dev.inmo.tgbotapi.extensions.behaviour_builder.strictlyOn
+import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.flatInlineKeyboard
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
@@ -30,6 +36,7 @@ import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.types.message.textsources.mention
+import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
 import dev.inmo.tgbotapi.utils.bold
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filter
@@ -41,44 +48,34 @@ import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 
 object Plugin : Plugin {
+    private val ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier = named("ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier")
     override fun Module.setupDI(database: Database, params: JsonObject) {
         singleWithBinds {
             ExposedReviewMessagesInfo(get())
         }
-    }
-
-    @Serializable
-    private sealed interface ReviewState : State {
-        override val context: SuggestionId
-        @Serializable
-        data class Initialization(
-            override val context: SuggestionId
-        ) : ReviewState
-
-        @Serializable
-        data class WaitReview(
-            override val context: SuggestionId,
-            val messages: List<MessageMetaInfo>,
-            val manageMessage: MessageMetaInfo
-        ) : ReviewState
+        single(ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier) {
+            SuggestionsMessageMetaInfosExposedRepo(get(), "reviews_suggestions_messages")
+        }
     }
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
         val suggestionsRepo = koin.get<SuggestionsRepo>()
         val publisher = koin.get<MessagesResender>()
         val chatsConfig = koin.get<ChatsConfig>()
+        val suggestionsMessagesRepo = koin.get<SuggestionsMessageMetaInfosExposedRepo>(ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier)
 
-        val acceptButtonData = "accept"
-        val rejectButtonData = "reject"
-        val banButtonData = "ban"
+        val acceptButtonData = "review_accept"
+        val rejectButtonData = "review_reject"
+        val banButtonData = "review_ban"
 
         suspend fun BehaviourContext.updateSuggestionPanel(
             suggestion: RegisteredSuggestion,
-            firstMetaInfo: MessageMetaInfo,
-            managementMessage: MessageMetaInfo?
-        ): MessageMetaInfo {
+            firstMetaInfo: MessageMetaInfo?
+        ): MessageMetaInfo? {
+            val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
             val user = getChat(suggestion.user).userOrNull()
             val statusString = when (suggestion.status) {
                 is SuggestionStatus.Created -> "Created"
@@ -106,131 +103,122 @@ object Plugin : Plugin {
                 is SuggestionStatus.Rejected -> null
             }
 
-            return managementMessage ?.also {
-                edit(it.chatId, it.messageId, entities = entities, replyMarkup = replyMarkup)
-            } ?: reply(
-                firstMetaInfo.chatId,
-                firstMetaInfo.messageId,
-                entities = entities,
-                replyMarkup = replyMarkup
-            ).let {
-                MessageMetaInfo(it)
+            return when {
+                managementMessage != null -> {
+                    edit(
+                        managementMessage.chatId,
+                        managementMessage.messageId,
+                        entities = entities,
+                        replyMarkup = replyMarkup
+                    )
+                    managementMessage
+                }
+                firstMetaInfo != null -> {
+                    reply(
+                        firstMetaInfo.chatId,
+                        firstMetaInfo.messageId,
+                        entities = entities,
+                        replyMarkup = replyMarkup
+                    ).let {
+                        MessageMetaInfo(it).also {
+                            suggestionsMessagesRepo.set(suggestion.id, it)
+                            suggestionsRepo.updateStatus(suggestion.id, SuggestionStatus.OnReview(DateTime.now()))
+                        }
+                    }
+                }
+                else -> null
             }
         }
 
-        strictlyOn { state: ReviewState.Initialization ->
-            val suggestion = suggestionsRepo.getById(state.context) ?: return@strictlyOn null
+        suspend fun initSuggestionMessage(suggestion: RegisteredSuggestion) {
             val sent = publisher.resend(
                 chatsConfig.suggestionsChat,
                 suggestion.content.map { it.messageMetaInfo }
             )
-
-            ReviewState.WaitReview(
-                state.context,
-                sent.map { it.second },
-                updateSuggestionPanel(
-                    suggestion = suggestion,
-                    firstMetaInfo = sent.first().second,
-                    managementMessage = null
-                )
+            updateSuggestionPanel(
+                suggestion = suggestion,
+                firstMetaInfo = sent.first().second
             )
         }
 
-        strictlyOn { state: ReviewState.WaitReview ->
-            val suggestion = suggestionsRepo.getById(state.context) ?: return@strictlyOn null
+        suggestionsRepo.newObjectsFlow.subscribeSafelyWithoutExceptions(this) { suggestion ->
+            initSuggestionMessage(suggestion)
+        }
 
-            val callbackQuery = oneOf(
-                async {
-                    waitMessageDataCallbackQuery().filter {
-                        it.data == acceptButtonData
-                            && it.message.messageId == state.manageMessage.messageId
-                            && it.message.chat.id == state.manageMessage.chatId
-                    }.first()
-                },
-                async {
-                    waitMessageDataCallbackQuery().filter {
-                        it.data == banButtonData
-                            && it.message.messageId == state.manageMessage.messageId
-                            && it.message.chat.id == state.manageMessage.chatId
-                    }.first()
-                },
-                async {
-                    waitMessageDataCallbackQuery().filter {
-                        it.data == rejectButtonData
-                            && it.message.messageId == state.manageMessage.messageId
-                            && it.message.chat.id == state.manageMessage.chatId
-                    }.first()
-                },
-                async {
-                    merge(
-                        suggestionsRepo.updatedObjectsFlow.filter { it.id == state.context },
-                        suggestionsRepo.deletedObjectsIdsFlow.filter { it == state.context }
-                    ).first()
-                    null
-                }
-            )
+        suggestionsRepo.updatedObjectsFlow.subscribeSafelyWithoutExceptions(this) {
+            updateSuggestionPanel(it, null)
+        }
 
-            when (callbackQuery ?.data) {
-                acceptButtonData -> {
-                    suggestionsRepo.updateStatus(
-                        suggestion.id,
-                        SuggestionStatus.Accepted(
-                            callbackQuery.user.id,
-                            DateTime.now()
-                        )
-                    )
-                    null
-                }
-                banButtonData -> {
-                    suggestionsRepo.updateStatus(
-                        suggestion.id,
-                        SuggestionStatus.Banned(
-                            callbackQuery.user.id,
-                            DateTime.now()
-                        )
-                    )
-                    null
-                }
-                rejectButtonData -> {
-                    suggestionsRepo.updateStatus(
-                        suggestion.id,
-                        SuggestionStatus.Rejected(
-                            callbackQuery.user.id,
-                            DateTime.now()
-                        )
-                    )
-                    null
-                }
-                else -> {
-                    val existsSuggestion = suggestionsRepo.getById(state.context)
-                    if (existsSuggestion == null) {
-                        edit(
-                            state.manageMessage.chatId,
-                            state.manageMessage.messageId,
-                            "Suggestion has been removed"
-                        )
-                        null
-                    } else {
-                        state
-                    }
-                }
-            }.also {
-                runCatchingSafely {
-                    suggestionsRepo.getById(state.context) ?.also {
-                        updateSuggestionPanel(it, state.messages.first(), state.manageMessage)
-                    } ?: also {
-                        edit(
-                            state.manageMessage.chatId,
-                            state.manageMessage.messageId,
-                            "Suggestion has been removed"
-                        )
+        launchSafelyWithoutExceptions {
+            doForAllWithNextPaging {
+                suggestionsRepo.getByPagination(it).also {
+                    it.results.forEach {
+                        if (suggestionsMessagesRepo.contains(it.id)) {
+                            return@forEach
+                        }
+
+                        launchSafelyWithoutExceptions {
+                            initSuggestionMessage(it)
+                        }
                     }
                 }
             }
         }
 
-        suggestionsRepo.newObjectsFlow.subscribeSafelyWithoutExceptions(this) {
-            startChain(ReviewState.Initialization(it.id))
+        suspend fun registerCompleteMessageDataCallbackQueryTrigger(
+            data: String,
+            block: suspend MessageCallbackQuery.(RegisteredSuggestion) -> Unit
+        ) {
+            onMessageDataCallbackQuery(
+                data,
+                initialFilter = { it.message.chat.id == chatsConfig.suggestionsChat }
+            ) {
+                val suggestionId = suggestionsMessagesRepo.getSuggestionId(
+                    it.message.chat.id,
+                    it.message.messageId
+                ) ?: return@onMessageDataCallbackQuery
+
+                val suggestion = suggestionsRepo.getById(suggestionId)
+
+                if (suggestion == null) {
+                    runCatchingSafely {
+                        delete(it.message)
+                    }
+                    suggestionsMessagesRepo.unset(suggestionId)
+                } else {
+                    it.block(suggestion)
+                }
+            }
+        }
+
+        registerCompleteMessageDataCallbackQueryTrigger(banButtonData) {
+            suggestionsRepo.updateStatus(
+                it.id,
+                SuggestionStatus.Banned(
+                    user.id,
+                    DateTime.now()
+                )
+            )
+        }
+
+        registerCompleteMessageDataCallbackQueryTrigger(acceptButtonData) {
+            suggestionsRepo.updateStatus(
+                it.id,
+                SuggestionStatus.Accepted(
+                    user.id,
+                    DateTime.now()
+                )
+            )
+        }
+
+        registerCompleteMessageDataCallbackQueryTrigger(rejectButtonData) {
+            suggestionsRepo.updateStatus(
+                it.id,
+                SuggestionStatus.Rejected(
+                    user.id,
+                    DateTime.now()
+                )
+            )
         }
     }
 }
