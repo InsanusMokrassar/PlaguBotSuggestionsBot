@@ -18,4 +18,4 @@ jobs:
           username: ${{ secrets.DOCKER_LOGIN }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Deploy
-        run: ./gradlew build && cd ./runner && ./deploy.sh
+        run: ./gradlew build && cd ./runner && chmod +x ./deploy.sh && ./deploy.sh
