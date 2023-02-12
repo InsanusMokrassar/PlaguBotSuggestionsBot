@@ -8,15 +8,29 @@ import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionStatus
 import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
+import dev.inmo.tgbotapi.abstracts.Texted
+import dev.inmo.tgbotapi.abstracts.TextedWithTextSources
 import dev.inmo.tgbotapi.extensions.api.bot.getMe
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
+import dev.inmo.tgbotapi.extensions.api.edit.caption.editMessageCaption
+import dev.inmo.tgbotapi.extensions.api.edit.edit
+import dev.inmo.tgbotapi.extensions.api.forwardMessage
+import dev.inmo.tgbotapi.extensions.api.send.copyMessage
 import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
+import dev.inmo.tgbotapi.extensions.utils.contentMessageOrNull
 import dev.inmo.tgbotapi.extensions.utils.extendedPrivateChatOrNull
+import dev.inmo.tgbotapi.extensions.utils.withContentOrNull
+import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
+import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.types.chat.ExtendedBot
 import dev.inmo.tgbotapi.types.chat.ExtendedPrivateChat
 import dev.inmo.tgbotapi.types.chat.PrivateChat
+import dev.inmo.tgbotapi.types.message.content.MediaContent
+import dev.inmo.tgbotapi.types.message.content.TextContent
+import dev.inmo.tgbotapi.types.message.content.TextedMediaContent
+import dev.inmo.tgbotapi.types.message.textsources.RegularTextSource
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.hashtag
 import dev.inmo.tgbotapi.types.message.textsources.mention
@@ -42,11 +56,12 @@ object Plugin : Plugin {
         val afterMessage: String? = null,
         val template: String? = null,
         val anonText: String = "anonymous",
-        val defaultUserText: String = "user"
+        val defaultUserText: String = "user",
+
     ) {
         private val PrivateChat.name
             get() = "${lastName.takeIf { it.isNotEmpty() } ?.let { "$it " } ?: ""}${firstName}"
-        fun prependWithTemplate(suggestion: RegisteredSuggestion, suggester: ExtendedPrivateChat?, bot: ExtendedBot): TextSourcesList {
+        fun suggestionNoteTextSources(suggestion: RegisteredSuggestion, suggester: ExtendedPrivateChat?, bot: ExtendedBot): TextSourcesList {
             template ?: return emptyList()
 
             val userMention by lazy {
@@ -97,6 +112,15 @@ object Plugin : Plugin {
         suggestionsRepo.updatedObjectsFlow.filter {
             it.status is SuggestionStatus.Accepted
         }.subscribeSafelyWithoutExceptions(koin.get()) {
+            val sourceSortedContent = it.content.sortedBy { it.order }
+            val firstAvailableMessageInfoToMessage = sourceSortedContent.firstNotNullOfOrNull {
+                runCatchingSafely {
+                    forwardMessage(it.messageMetaInfo.chatId, toChatId = chatsConfig.cacheChat, it.messageMetaInfo.messageId)
+                }.getOrNull() ?.let { message ->
+                    it to message
+                }
+            } ?: return@subscribeSafelyWithoutExceptions
+            val (firstAvailableMessageInfo, message) = firstAvailableMessageInfoToMessage
             config ?.beforeMessage ?.let {
                 send(
                     chatsConfig.targetChat,
@@ -104,15 +128,7 @@ object Plugin : Plugin {
                 )
             }
             delay(500L)
-            publisher.resend(
-                chatsConfig.targetChat,
-                it.content.sortedBy {
-                    it.order
-                }.map {
-                    it.messageMetaInfo
-                }
-            )
-            config ?.prependWithTemplate(
+            val resultMessage = config ?.suggestionNoteTextSources(
                 it,
                 runCatchingSafely {
                     getChat(it.user).extendedPrivateChatOrNull()
@@ -120,9 +136,28 @@ object Plugin : Plugin {
                 bot
             ) ?.takeIf {
                 it.isNotEmpty()
-            } ?.let {
-                send(chatsConfig.targetChat, it)
-            }
+            } ?.let { textSources ->
+                runCatchingSafely {
+                    message.contentMessageOrNull() ?.let {
+                        val resend = it.content.createResend(
+                            chatsConfig.cacheChat,
+                        )
+                        execute(resend).contentMessageOrNull() ?.also {
+                            it.withContentOrNull<TextedMediaContent>() ?.let {
+                                editMessageCaption(it, (it.content as? TextedMediaContent) ?.textSources ?.let { it + RegularTextSource("\n\n") + textSources } ?: return@let )
+                            } ?: it.withContentOrNull<TextContent>() ?.let {
+                                edit(it, it.content.textSources + RegularTextSource("\n\n") + textSources)
+                            }
+                        }
+                    }
+                }
+            } ?.getOrNull() ?: message
+            publisher.resend(
+                chatsConfig.targetChat,
+                listOf(MessageMetaInfo(resultMessage).copy(group = firstAvailableMessageInfo.messageMetaInfo.group)) + ((sourceSortedContent.dropWhile { it != firstAvailableMessageInfo } - firstAvailableMessageInfo)).map {
+                    it.messageMetaInfo
+                }
+            )
             delay(500L)
             config ?.afterMessage ?.let {
                 send(
