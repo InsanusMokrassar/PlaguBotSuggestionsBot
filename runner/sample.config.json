@@ -24,5 +24,8 @@
     "anonymous": "anon",
     "defaultUserText": "user",
     "template": "Sent by $user via $bot"
+  },
+  "hello": {
+    "m2": "Hello! just sent message to me to make a suggestion to [our channel](t.me/12345678)"
   }
 }

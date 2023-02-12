@@ -101,10 +101,8 @@ object Plugin : Plugin {
             val statusString = when (suggestion.status) {
                 is SuggestionStatus.Created -> "Created"
                 is SuggestionStatus.OnReview -> "In review"
-                is SuggestionStatus.Accepted -> "Accepted"
-                is SuggestionStatus.Banned -> "User banned"
-                is SuggestionStatus.Rejected -> "Rejected"
                 is SuggestionStatus.Cancelled -> "Cancelled"
+                is SuggestionStatus.Done -> "Reviewed"
             }
 
             val entities = buildEntities {
