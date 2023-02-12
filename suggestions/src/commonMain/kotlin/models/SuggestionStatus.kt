@@ -25,7 +25,16 @@ sealed interface SuggestionStatus {
     ) : Cancelable
 
     @Serializable
-    sealed interface Reviewed : SuggestionStatus {
+    sealed interface Done : SuggestionStatus
+    @Serializable
+    @SerialName("Ca")
+    data class Cancelled(
+        @Serializable(DateTimeSerializer::class)
+        override val dateTime: DateTime
+    ) : Done
+
+    @Serializable
+    sealed interface Reviewed : Done {
         val reviewerId: UserId
     }
 

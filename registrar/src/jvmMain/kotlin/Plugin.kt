@@ -5,7 +5,9 @@ import dev.inmo.micro_utils.coroutines.firstOf
 import dev.inmo.micro_utils.coroutines.runCatchingSafely
 import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions
 import dev.inmo.micro_utils.fsm.common.State
+import dev.inmo.micro_utils.koin.singleWithRandomQualifierAndBinds
 import dev.inmo.micro_utils.repos.create
+import dev.inmo.micro_utils.repos.set
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.plugins.inline.queries.models.Format
 import dev.inmo.plagubot.plugins.inline.queries.models.OfferTemplate
@@ -43,6 +45,19 @@ import dev.inmo.tgbotapi.types.toChatId
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.regular
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
+import dev.inmo.plagubot.suggestionsbot.common.StartChainConflictSolver
+import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.SuggestionsMessageMetaInfosExposedRepo
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
+import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
+import dev.inmo.tgbotapi.extensions.api.send.reply
+import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
+import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
+import dev.inmo.tgbotapi.extensions.utils.userOrNull
+import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
+import dev.inmo.tgbotapi.libraries.resender.MessagesResender
+import dev.inmo.tgbotapi.libraries.resender.invoke
+import dev.inmo.tgbotapi.types.message.textsources.mention
+import dev.inmo.tgbotapi.utils.bold
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -51,15 +66,120 @@ import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 
 object Plugin : Plugin {
+    private val RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier = named("RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier")
     override fun Module.setupDI(database: Database, params: JsonObject) {
-
+        single(RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier) {
+            SuggestionsMessageMetaInfosExposedRepo(get(), "registrar_suggestions_messages")
+        }
+        singleWithRandomQualifierAndBinds {
+            StartChainConflictSolver { old, new ->
+                if (old is RegistrationState.InProcess && new is RegistrationState.InProcess) {
+                    false
+                } else {
+                    null
+                }
+            }
+        }
     }
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
-        val config = koin.get<ChatsConfig>()
+        val chatsConfig = koin.get<ChatsConfig>()
         val suggestionsRepo = koin.get<SuggestionsRepo>()
+        val suggestionsMessagesRepo = koin.get<SuggestionsMessageMetaInfosExposedRepo>(RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier)
+        val publisher = koin.get<MessagesResender>()
+
+        val cancelButtonData = "cancel"
+
+        suspend fun BehaviourContext.updateSuggestionPanel(
+            suggestion: RegisteredSuggestion,
+            firstMetaInfo: MessageMetaInfo?
+        ): MessageMetaInfo? {
+            val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
+            val user = getChat(suggestion.user).userOrNull()
+            val statusString = when (suggestion.status) {
+                is SuggestionStatus.Created -> "Created"
+                is SuggestionStatus.OnReview -> "In review"
+                is SuggestionStatus.Accepted -> "Accepted"
+                is SuggestionStatus.Banned -> "User banned"
+                is SuggestionStatus.Rejected -> "Rejected"
+                is SuggestionStatus.Cancelled -> "Cancelled"
+            }
+
+            val entities = buildEntities {
+                +"User: " + (user ?.let { mention(it) } ?: mention("link", suggestion.user)) + "\n"
+                +"Anonymous: " + (if (suggestion.isAnonymous) "✅" else "❌") + "\n"
+                +"Status: " + bold(statusString)
+            }
+
+            val replyMarkup = when (suggestion.status) {
+                is SuggestionStatus.Created,
+                is SuggestionStatus.OnReview -> flatInlineKeyboard {
+                    dataButton("Cancel", cancelButtonData)
+                }
+                is SuggestionStatus.Done -> null
+            }
+
+            return when {
+                managementMessage != null -> {
+                    edit(
+                        managementMessage.chatId,
+                        managementMessage.messageId,
+                        entities = entities,
+                        replyMarkup = replyMarkup
+                    )
+                    managementMessage
+                }
+                firstMetaInfo != null -> {
+                    reply(
+                        firstMetaInfo.chatId,
+                        firstMetaInfo.messageId,
+                        entities = entities,
+                        replyMarkup = replyMarkup
+                    ).let {
+                        MessageMetaInfo(it).also {
+                            suggestionsMessagesRepo.set(suggestion.id, it)
+                            suggestionsRepo.updateStatus(suggestion.id, SuggestionStatus.OnReview(DateTime.now()))
+                        }
+                    }
+                }
+                else -> null
+            }
+        }
+
+        suspend fun initSuggestionMessage(suggestion: RegisteredSuggestion) {
+            val sent = publisher.resend(
+                suggestion.user.toChatId(),
+                suggestion.content.map { it.messageMetaInfo }
+            )
+            updateSuggestionPanel(
+                suggestion = suggestion,
+                firstMetaInfo = sent.first().second
+            )
+        }
+
+        suggestionsRepo.newObjectsFlow.subscribeSafelyWithoutExceptions(koin.get()) {
+            initSuggestionMessage(it)
+        }
+        suggestionsRepo.updatedObjectsFlow.subscribeSafelyWithoutExceptions(koin.get()) {
+            updateSuggestionPanel(it, null)
+        }
+        suggestionsRepo.deletedObjectsIdsFlow.subscribeSafelyWithoutExceptions(koin.get()) {
+            suggestionsMessagesRepo.get(it) ?.let {
+                edit(it.chatId, it.messageId, "Suggestion has been removed")
+            }
+        }
+
+        onMessageDataCallbackQuery(cancelButtonData) {
+            val suggestionId = suggestionsMessagesRepo.getSuggestionId(it.message.chat.id, it.message.messageId) ?: let { _ ->
+                answer(it, "Nothing to cancel here")
+                return@onMessageDataCallbackQuery
+            }
+
+            suggestionsRepo.updateStatus(suggestionId, SuggestionStatus.Cancelled(DateTime.now()))
+        }
 
         strictlyOn { state: RegistrationState.InProcess ->
             var state = state.copy()
@@ -183,7 +303,7 @@ object Plugin : Plugin {
         }
 
         val registrarCommandsFilter: CommonMessageFilter<*> = CommonMessageFilter {
-            !config.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat && !suggestionsRepo.isUserHaveBannedSuggestions(it.chat.id.toChatId())
+            !chatsConfig.checkIsOfWorkChat(it.chat.id) && it.chat is PrivateChat && !suggestionsRepo.isUserHaveBannedSuggestions(it.chat.id.toChatId())
         }
         val firstMessageNotCommandFilter: CommonMessageFilter<*> = CommonMessageFilter {
             it.withContentOrNull<TextContent>() ?.let { it.content.textSources.firstOrNull() is BotCommandTextSource } == true

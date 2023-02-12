@@ -83,6 +83,7 @@ object Plugin : Plugin {
                 is SuggestionStatus.Accepted -> "Accepted"
                 is SuggestionStatus.Banned -> "User banned"
                 is SuggestionStatus.Rejected -> "Rejected"
+                is SuggestionStatus.Cancelled -> "Cancelled"
             }
 
             val entities = buildEntities {
@@ -98,9 +99,7 @@ object Plugin : Plugin {
                     dataButton("Ban", banButtonData)
                     dataButton("Reject", rejectButtonData)
                 }
-                is SuggestionStatus.Accepted,
-                is SuggestionStatus.Banned,
-                is SuggestionStatus.Rejected -> null
+                is SuggestionStatus.Done -> null
             }
 
             return when {

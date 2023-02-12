@@ -34,6 +34,7 @@ internal class ExposedStatusesRepo(
             SuggestionStatus.Accepted::class -> 2
             SuggestionStatus.Banned::class -> 3
             SuggestionStatus.Rejected::class -> 4
+            SuggestionStatus.Cancelled::class -> 5
             else -> error("Unexpected type of suggestion status")
         }.toByte()
         fun SuggestionStatus.statusType(): Byte = (this::class).statusType()
@@ -47,6 +48,7 @@ internal class ExposedStatusesRepo(
             2 -> SuggestionStatus.Accepted(reviewerId ?: error("Reviewer parameter is required for Accepted status"), dateTime)
             3 -> SuggestionStatus.Banned(reviewerId ?: error("Reviewer parameter is required for Banned status"), dateTime)
             4 -> SuggestionStatus.Rejected(reviewerId ?: error("Reviewer parameter is required for Rejected status"), dateTime)
+            5 -> SuggestionStatus.Cancelled(dateTime)
             else -> SuggestionStatus.Rejected(reviewerId ?: error("Reviewer parameter is required for Rejected status"), dateTime)
         }
     }
