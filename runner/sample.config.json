@@ -20,6 +20,9 @@
   },
   "publisher": {
     "beforeMessage": "/start_post",
-    "afterMessage": "/finish_post"
+    "afterMessage": "/finish_post",
+    "anonymous": "anon",
+    "defaultUserText": "user",
+    "template": "Sent by $user via $bot"
   }
 }

@@ -89,7 +89,6 @@ object Plugin : Plugin {
         val chatsConfig = koin.get<ChatsConfig>()
         val suggestionsRepo = koin.get<SuggestionsRepo>()
         val suggestionsMessagesRepo = koin.get<SuggestionsMessageMetaInfosExposedRepo>(RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier)
-        val publisher = koin.get<MessagesResender>()
 
         val cancelButtonData = "cancel"
 
@@ -150,13 +149,9 @@ object Plugin : Plugin {
         }
 
         suspend fun initSuggestionMessage(suggestion: RegisteredSuggestion) {
-            val sent = publisher.resend(
-                suggestion.user.toChatId(),
-                suggestion.content.map { it.messageMetaInfo }
-            )
             updateSuggestionPanel(
                 suggestion = suggestion,
-                firstMetaInfo = sent.first().second
+                firstMetaInfo = suggestion.content.minBy { it.order }.messageMetaInfo
             )
         }
 
