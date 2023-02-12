@@ -106,7 +106,6 @@ object Plugin : Plugin {
             }
 
             val entities = buildEntities {
-                +"User: " + (user ?.let { mention(it) } ?: mention("link", suggestion.user)) + "\n"
                 +"Anonymous: " + (if (suggestion.isAnonymous) "✅" else "❌") + "\n"
                 +"Status: " + bold(statusString)
             }
