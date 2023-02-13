@@ -15,11 +15,11 @@ function assert_success() {
 
 app=suggestionsbot
 version="`grep ../gradle.properties -e "^docker_version=" | grep -e "[0-9.]*" -o`"
-server=docker.io/insanusmokrassar
+username=insanusmokrassar
 
 assert_success ../gradlew build
 assert_success sudo docker build -t $app:"$version" .
-assert_success sudo docker tag $app:"$version" $server/$app:$version
-assert_success sudo docker tag $app:"$version" $server/$app:latest
-assert_success sudo docker push $server/$app:$version
-assert_success sudo docker push $server/$app:latest
+assert_success sudo docker tag $app:"$version" $username/$app:$version
+assert_success sudo docker tag $app:"$version" $username/$app:latest
+assert_success sudo docker push $username/$app:$version
+assert_success sudo docker push $username/$app:latest
