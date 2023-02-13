@@ -20,6 +20,7 @@ import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
 import dev.inmo.tgbotapi.extensions.utils.contentMessageOrNull
 import dev.inmo.tgbotapi.extensions.utils.extendedPrivateChatOrNull
+import dev.inmo.tgbotapi.extensions.utils.formatting.makeChatLink
 import dev.inmo.tgbotapi.extensions.utils.withContentOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
@@ -33,7 +34,9 @@ import dev.inmo.tgbotapi.types.message.content.TextedMediaContent
 import dev.inmo.tgbotapi.types.message.textsources.RegularTextSource
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.hashtag
+import dev.inmo.tgbotapi.types.message.textsources.link
 import dev.inmo.tgbotapi.types.message.textsources.mention
+import dev.inmo.tgbotapi.types.userLink
 import dev.inmo.tgbotapi.utils.buildEntities
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -68,9 +71,10 @@ object Plugin : Plugin {
                 if (suggestion.isAnonymous) {
                     hashtag(anonText)
                 } else {
-                    suggester ?.let {
-                        mention(it.name, it.id)
-                    } ?: mention(defaultUserText, suggestion.user)
+                    link(
+                        suggester ?.name ?: defaultUserText,
+                        suggestion.user.chatId.userLink
+                    )
                 }
             }
             val parts = template.split("$")
