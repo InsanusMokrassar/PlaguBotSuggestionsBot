@@ -12,6 +12,7 @@ kotlin {
             dependencies {
                 api libs.microutils.koin
                 api libs.plagubot.plugin
+                api libs.tgbotapi
             }
         }
     }

@@ -7,7 +7,7 @@ plagubot = "3.4.1"
 plagubot-plugins = "0.8.0"
 tgbotapi-libraries = "0.8.1"
 
-tgbotapi = "5.1.1-branch_5.1.1-build1425"
+tgbotapi = "5.1.1-branch_5.1.1-build1427"
 
 psql = "42.5.0"
 
@@ -30,6 +30,7 @@ plagubot-plugins-inline-queries = { module = "dev.inmo:plagubot.plugins.inline.q
 plagubot-plugins-inline-buttons = { module = "dev.inmo:plagubot.plugins.inline.buttons", version.ref = "plagubot-plugins" }
 
 tgbotapi-libraries-resender = { module = "dev.inmo:tgbotapi.libraries.resender", version.ref = "tgbotapi-libraries" }
+tgbotapi = { module = "dev.inmo:tgbotapi", version.ref = "tgbotapi" }
 
 psql = { module = "org.postgresql:postgresql", version.ref = "psql" }
 

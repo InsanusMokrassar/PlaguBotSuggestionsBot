@@ -51,6 +51,7 @@ import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
 import dev.inmo.tgbotapi.extensions.api.send.reply
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
+import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitAnyContentMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
@@ -225,7 +226,7 @@ object Plugin : Plugin {
             val newMessagesInfo = firstOf<List<ContentMessage<*>>?> {
                 add {
                     val result = mutableListOf<ContentMessage<MessageContent>>()
-                    waitContentMessage().filter {
+                    waitAnyContentMessage().filter {
                         it.chat.id == state.context && it.content.textContentOrNull() ?.text != "/finish" && it.content.textContentOrNull() ?.text != "/cancel"
                     }.onEach { result.add(it) }.debounce(1000L).first()
                     result

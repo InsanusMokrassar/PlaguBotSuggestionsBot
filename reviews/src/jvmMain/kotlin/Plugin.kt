@@ -28,15 +28,19 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitMessageDa
 import dev.inmo.tgbotapi.extensions.behaviour_builder.oneOf
 import dev.inmo.tgbotapi.extensions.behaviour_builder.strictlyOn
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
+import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.flatInlineKeyboard
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
+import dev.inmo.tgbotapi.types.chat.PrivateChat
+import dev.inmo.tgbotapi.types.message.textsources.link
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.types.message.textsources.mention
 import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
+import dev.inmo.tgbotapi.types.userLink
 import dev.inmo.tgbotapi.utils.bold
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.filter
@@ -52,6 +56,8 @@ import org.koin.core.qualifier.named
 
 object Plugin : Plugin {
     private val ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier = named("ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier")
+    private val PrivateChat.name
+        get() = "${lastName.takeIf { it.isNotEmpty() } ?.let { "$it " } ?: ""}${firstName}"
     override fun Module.setupDI(database: Database, params: JsonObject) {
         singleWithBinds {
             ExposedReviewMessagesInfo(get())
@@ -76,7 +82,9 @@ object Plugin : Plugin {
             firstMetaInfo: MessageMetaInfo?
         ): MessageMetaInfo? {
             val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
-            val user = getChat(suggestion.user).userOrNull()
+            val user = runCatchingSafely {
+                getChat(suggestion.user).privateChatOrNull()
+            }.getOrNull()
             val statusString = when (suggestion.status) {
                 is SuggestionStatus.Created -> "Created"
                 is SuggestionStatus.OnReview -> "In review"
@@ -87,7 +95,7 @@ object Plugin : Plugin {
             }
 
             val entities = buildEntities {
-                +"User: " + (user ?.let { mention(it) } ?: mention("link", suggestion.user)) + "\n"
+                +"User: " + link(user?.name ?: "link", suggestion.user.userLink) + "\n"
                 +"Anonymous: " + (if (suggestion.isAnonymous) "✅" else "❌") + "\n"
                 +"Status: " + bold(statusString)
             }
