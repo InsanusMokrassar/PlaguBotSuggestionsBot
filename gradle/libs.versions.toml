@@ -7,6 +7,8 @@ plagubot = "3.4.1"
 plagubot-plugins = "0.8.0"
 tgbotapi-libraries = "0.8.1"
 
+tgbotapi = "5.1.1-branch_5.1.1-build1425"
+
 psql = "42.5.0"
 
 microutils = "0.16.8"
