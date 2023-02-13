@@ -14,7 +14,7 @@ function assert_success() {
 }
 
 app=suggestionsbot
-version="`grep ../gradle.properties -e "^version=" | grep -e "[0-9.]*" -o`"
+version="`grep ../gradle.properties -e "^docker_version=" | grep -e "[0-9.]*" -o`"
 server=docker.io/insanusmokrassar
 
 assert_success ../gradlew build
