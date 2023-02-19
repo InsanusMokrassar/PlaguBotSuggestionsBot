@@ -28,5 +28,10 @@
   },
   "hello": {
     "m2": "Hello! just sent message to me to make a suggestion to [our channel](t.me/12345678)"
+  },
+  "reviews": {
+    "acceptRequireApprove": false,
+    "banRequireApprove": true,
+    "rejectRequireApprove": true
   }
 }

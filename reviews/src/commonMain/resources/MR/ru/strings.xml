@@ -4,7 +4,11 @@
     <string name="statusMessageSuggestedPart">\ предложил </string>
     <string name="statusMessageAnonymouslyPart">🦊 анонимно</string>
     <string name="statusMessageNotAnonymouslyPart">👨 не анонимно</string>
-    <string name="buttonTextAccept">✅Принять</string>
-    <string name="buttonTextBan">🔨Забанить</string>
-    <string name="buttonTextReject">❌Отклонить</string>
+    <string name="buttonTextAccept">✅ Принять</string>
+    <string name="buttonTextBan">🔨 Забанить</string>
+    <string name="buttonTextReject">❌ Отклонить</string>
+    <string name="buttonTextCancel">Отмена</string>
+    <string name="approveTextAccept">Вы уверены, что хотите ✅ Принять этот пост?</string>
+    <string name="approveTextBan">Вы уверены, что хотите 🔨 Забанить автора этого поста?</string>
+    <string name="approveTextReject">Вы уверены, что хотите ❌ Отклонить этот пост?</string>
 </resources>

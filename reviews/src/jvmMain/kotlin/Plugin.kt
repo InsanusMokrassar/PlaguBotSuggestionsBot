@@ -28,6 +28,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessag
 import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.flatInlineKeyboard
+import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
@@ -40,6 +41,8 @@ import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
 import dev.inmo.tgbotapi.types.userLink
 import dev.inmo.tgbotapi.utils.bold
 import dev.inmo.tgbotapi.utils.underline
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
@@ -48,6 +51,12 @@ import org.koin.core.qualifier.named
 
 object Plugin : Plugin {
     private val ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier = named("ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier")
+    @Serializable
+    private data class Config(
+        val acceptRequireApprove: Boolean = false,
+        val banRequireApprove: Boolean = true,
+        val rejectRequireApprove: Boolean = true,
+    )
     private val PrivateChat.name
         get() = "${lastName.takeIf { it.isNotEmpty() } ?.let { "$it " } ?: ""}${firstName}"
     override fun Module.setupDI(database: Database, params: JsonObject) {
@@ -57,6 +66,11 @@ object Plugin : Plugin {
         single(ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier) {
             SuggestionsMessageMetaInfosExposedRepo(get(), "reviews_suggestions_messages")
         }
+        single {
+            params["reviews"] ?.let {
+                get<Json>().decodeFromJsonElement(Config.serializer(), it)
+            } ?: Config()
+        }
     }
 
     override suspend fun BehaviourContextWithFSM<State>.setupBotPlugin(koin: Koin) {
@@ -64,10 +78,12 @@ object Plugin : Plugin {
         val publisher = koin.get<MessagesResender>()
         val chatsConfig = koin.get<ChatsConfig>()
         val suggestionsMessagesRepo = koin.get<SuggestionsMessageMetaInfosExposedRepo>(ReviewsSuggestionsMessageMetaInfosExposedRepoQualifier)
+        val config = koin.get<Config>()
 
         val acceptButtonData = "review_accept"
         val rejectButtonData = "review_reject"
         val banButtonData = "review_ban"
+        val cancelButtonData = "cancel"
 
         suspend fun BehaviourContext.updateSuggestionPanel(
             suggestion: RegisteredSuggestion,
@@ -176,12 +192,33 @@ object Plugin : Plugin {
             }
         }
 
+        suspend fun BehaviourContext.approveSuggestionPanel(
+            approveText: String,
+            approveButtonText: String,
+            approveButtonData: String,
+            managementMessageMetaInfo: MessageMetaInfo
+        ) {
+            edit(
+                managementMessageMetaInfo.chatId,
+                managementMessageMetaInfo.messageId,
+                approveText,
+                replyMarkup = flatInlineKeyboard {
+                    dataButton(approveButtonText, approveButtonData)
+                    dataButton(ReviewsResources.strings.buttonTextCancel.localized(chatsConfig.locale), cancelButtonData)
+                }
+            )
+        }
+
         suspend fun registerCompleteMessageDataCallbackQueryTrigger(
             data: String,
+            approveTextAndButton: Pair<String, String>?,
             block: suspend MessageCallbackQuery.(RegisteredSuggestion) -> Unit
         ) {
+            val approveData = "${data}_approve"
             onMessageDataCallbackQuery(
-                data,
+                approveTextAndButton ?.let {
+                    Regex(approveData)
+                } ?: Regex("($data)|($approveData)"),
                 initialFilter = { it.message.chat.id == chatsConfig.suggestionsChat }
             ) {
                 val suggestionId = suggestionsMessagesRepo.getSuggestionId(
@@ -200,19 +237,43 @@ object Plugin : Plugin {
                     it.block(suggestion)
                 }
             }
-        }
 
-        registerCompleteMessageDataCallbackQueryTrigger(banButtonData) {
-            suggestionsRepo.updateStatus(
-                it.id,
-                SuggestionStatus.Banned(
-                    user.id,
-                    DateTime.now()
-                )
+            approveTextAndButton ?.let {
+                onMessageDataCallbackQuery(
+                    data,
+                    initialFilter = { it.message.chat.id == chatsConfig.suggestionsChat }
+                ) {
+                    approveSuggestionPanel(
+                        approveTextAndButton.first,
+                        approveTextAndButton.second,
+                        approveData,
+                        MessageMetaInfo(it.message)
+                    )
+                }
+            }
+        }
+        onMessageDataCallbackQuery(
+            cancelButtonData,
+            initialFilter = { it.message.chat.id == chatsConfig.suggestionsChat }
+        ) {
+            val suggestionId = suggestionsMessagesRepo.getSuggestionId(
+                it.message.chat.id,
+                it.message.messageId
+            ) ?: return@onMessageDataCallbackQuery
+
+            updateSuggestionPanel(
+                suggestionsRepo.getById(suggestionId) ?: return@onMessageDataCallbackQuery,
+                null
             )
         }
 
-        registerCompleteMessageDataCallbackQueryTrigger(acceptButtonData) {
+        registerCompleteMessageDataCallbackQueryTrigger(
+            acceptButtonData,
+            Pair(
+                ReviewsResources.strings.approveTextAccept.localized(chatsConfig.locale),
+                ReviewsResources.strings.buttonTextAccept.localized(chatsConfig.locale)
+            ).takeIf { config.acceptRequireApprove }
+        ) {
             suggestionsRepo.updateStatus(
                 it.id,
                 SuggestionStatus.Accepted(
@@ -222,7 +283,29 @@ object Plugin : Plugin {
             )
         }
 
-        registerCompleteMessageDataCallbackQueryTrigger(rejectButtonData) {
+        registerCompleteMessageDataCallbackQueryTrigger(
+            banButtonData,
+            Pair(
+                ReviewsResources.strings.approveTextBan.localized(chatsConfig.locale),
+                ReviewsResources.strings.buttonTextBan.localized(chatsConfig.locale)
+            ).takeIf { config.banRequireApprove }
+        ) {
+            suggestionsRepo.updateStatus(
+                it.id,
+                SuggestionStatus.Banned(
+                    user.id,
+                    DateTime.now()
+                )
+            )
+        }
+
+        registerCompleteMessageDataCallbackQueryTrigger(
+            rejectButtonData,
+            Pair(
+                ReviewsResources.strings.approveTextReject.localized(chatsConfig.locale),
+                ReviewsResources.strings.buttonTextReject.localized(chatsConfig.locale)
+            ).takeIf { config.rejectRequireApprove }
+        ) {
             suggestionsRepo.updateStatus(
                 it.id,
                 SuggestionStatus.Rejected(
