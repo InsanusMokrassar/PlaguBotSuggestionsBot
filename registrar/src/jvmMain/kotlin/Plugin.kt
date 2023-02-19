@@ -58,6 +58,7 @@ import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.utils.bold
+import dev.inmo.tgbotapi.utils.underline
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -99,21 +100,26 @@ object Plugin : Plugin {
             val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
             val user = getChat(suggestion.user).userOrNull()
             val statusString = when (suggestion.status) {
-                is SuggestionStatus.Created -> "Created"
-                is SuggestionStatus.OnReview -> "In review"
-                is SuggestionStatus.Cancelled -> "Cancelled"
-                is SuggestionStatus.Done -> "Reviewed"
+                is SuggestionStatus.Created,
+                is SuggestionStatus.OnReview,
+                is SuggestionStatus.Cancelled -> suggestion.status.titleResource.localized(user.locale)
+                is SuggestionStatus.Reviewed -> SuggestionStatus.Reviewed.titleResource.localized(user.locale)
             }
 
             val entities = buildEntities {
-                +"Anonymous: " + (if (suggestion.isAnonymous) "✅" else "❌") + "\n"
-                +"Status: " + bold(statusString)
+                underline(statusString) + "\n\n"
+                regular(RegistrarResources.strings.youSuggestedText.localized(user.locale))
+                if (suggestion.isAnonymous) {
+                    underline(RegistrarResources.strings.anonymouslyText.localized(user.locale))
+                } else {
+                    underline(RegistrarResources.strings.nonAnonymouslyText.localized(user.locale))
+                }
             }
 
             val replyMarkup = when (suggestion.status) {
                 is SuggestionStatus.Created,
                 is SuggestionStatus.OnReview -> flatInlineKeyboard {
-                    dataButton("Cancel", cancelButtonData)
+                    dataButton(RegistrarResources.strings.cancelButtonText.localized(user.locale), cancelButtonData)
                 }
                 is SuggestionStatus.Done -> null
             }
@@ -186,7 +192,7 @@ object Plugin : Plugin {
                     )
                 }
                 dataButton(
-                    RegistrarResources.strings.cancelPostCreatingButtonText.localized(state.locale),
+                    RegistrarResources.strings.cancelButtonText.localized(state.locale),
                     cancelUuid
                 )
                 dataButton(

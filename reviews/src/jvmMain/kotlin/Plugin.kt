@@ -82,7 +82,7 @@ object Plugin : Plugin {
                 underline(statusString) + "\n\n"
 
                 +ReviewsResources.strings.statusMessageUserPrefix.localized(chatsConfig.locale)
-                +link(user?.name ?: "link", suggestion.user.userLink)
+                +link(user?.name ?: ReviewsResources.strings.defaultUserName.localized(chatsConfig.locale), suggestion.user.userLink)
                 +ReviewsResources.strings.statusMessageSuggestedPart.localized(chatsConfig.locale)
                 if (suggestion.isAnonymous) {
                     underline(ReviewsResources.strings.statusMessageAnonymouslyPart.localized(chatsConfig.locale))
@@ -94,9 +94,9 @@ object Plugin : Plugin {
             val replyMarkup = when (suggestion.status) {
                 is SuggestionStatus.Created,
                 is SuggestionStatus.OnReview -> flatInlineKeyboard {
-                    dataButton("Accept", acceptButtonData)
-                    dataButton("Ban", banButtonData)
-                    dataButton("Reject", rejectButtonData)
+                    dataButton(ReviewsResources.strings.buttonTextAccept.localized(chatsConfig.locale), acceptButtonData)
+                    dataButton(ReviewsResources.strings.buttonTextBan.localized(chatsConfig.locale), banButtonData)
+                    dataButton(ReviewsResources.strings.buttonTextReject.localized(chatsConfig.locale), rejectButtonData)
                 }
                 is SuggestionStatus.Done -> null
             }
