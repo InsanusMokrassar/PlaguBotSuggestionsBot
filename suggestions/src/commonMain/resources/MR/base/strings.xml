@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
-    <string name="statusCreated">Created</string>
-    <string name="statusOnReview">On review</string>
-    <string name="statusCancelled">Cancelled</string>
-    <string name="statusAccepted">Accepted</string>
-    <string name="statusRejected">Rejected</string>
-    <string name="statusBanned">Banned</string>
-    <string name="statusReviewed">Reviewed</string>
-    <string name="statusDone">Done</string>
-    <string name="statusCancelable">Cancelable</string>
+    <string name="statusCreated">🆕 Created</string>
+    <string name="statusOnReview">👨‍⚖️ On review</string>
+    <string name="statusCancelled">🗙 Cancelled</string>
+    <string name="statusAccepted">✅ Accepted</string>
+    <string name="statusRejected">❌ Rejected</string>
+    <string name="statusBanned">🔨 Banned</string>
+    <string name="statusReviewed">☑️ Reviewed</string>
+    <string name="statusDone">✔️ Done</string>
+    <string name="statusCancelable">🔃 Cancelable</string>
 </resources>

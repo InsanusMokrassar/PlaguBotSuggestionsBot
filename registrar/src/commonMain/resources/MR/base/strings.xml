@@ -11,6 +11,6 @@
     <string name="finishPostRegistrationText">Ok, finishing your request</string>
     <string name="cancelPostRegistrationText">Suggestion has been cancelled</string>
     <string name="youSuggestedText">You suggested </string>
-    <string name="anonymouslyText">anonymously</string>
-    <string name="nonAnonymouslyText">not anonymously</string>
+    <string name="anonymouslyText">🦊 anonymously</string>
+    <string name="nonAnonymouslyText">👨 not anonymously</string>
 </resources>

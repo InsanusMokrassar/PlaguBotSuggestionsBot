@@ -2,9 +2,9 @@
 <resources>
     <string name="defaultUserName">User</string>
     <string name="statusMessageSuggestedPart">\ suggested </string>
-    <string name="statusMessageAnonymouslyPart">anonymously</string>
-    <string name="statusMessageNotAnonymouslyPart">non anonymously</string>
-    <string name="buttonTextAccept">Accept</string>
-    <string name="buttonTextBan">Ban</string>
-    <string name="buttonTextReject">Reject</string>
+    <string name="statusMessageAnonymouslyPart">🦊 anonymously</string>
+    <string name="statusMessageNotAnonymouslyPart">👨 non anonymously</string>
+    <string name="buttonTextAccept">✅Accept</string>
+    <string name="buttonTextBan">🔨Ban</string>
+    <string name="buttonTextReject">❌Reject</string>
 </resources>

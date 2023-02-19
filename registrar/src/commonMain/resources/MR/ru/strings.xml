@@ -11,6 +11,6 @@
     <string name="finishPostRegistrationText">Понял, фиксирую ваш пост</string>
     <string name="cancelPostRegistrationText">Предложение было отменено</string>
     <string name="youSuggestedText">Вы предложили </string>
-    <string name="anonymouslyText">анонимно</string>
-    <string name="nonAnonymouslyText">не анонимно</string>
+    <string name="anonymouslyText">🦊 анонимно</string>
+    <string name="nonAnonymouslyText">👨 не анонимно</string>
 </resources>
