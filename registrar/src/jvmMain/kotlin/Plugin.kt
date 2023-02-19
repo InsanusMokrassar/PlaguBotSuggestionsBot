@@ -54,6 +54,7 @@ import dev.inmo.tgbotapi.extensions.api.send.reply
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitAnyContentMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
+import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.invoke
@@ -98,7 +99,7 @@ object Plugin : Plugin {
             firstMetaInfo: MessageMetaInfo?
         ): MessageMetaInfo? {
             val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
-            val user = getChat(suggestion.user).userOrNull()
+            val user = getChat(suggestion.user).privateChatOrNull()
             val statusString = when (suggestion.status) {
                 is SuggestionStatus.Created,
                 is SuggestionStatus.OnReview,

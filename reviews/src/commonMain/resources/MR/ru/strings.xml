@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <resources>
-    <string name="statusMessageUserPrefix">Пользователь </string>
-    <string name="statusMessageSuggestedPart"> предложил </string>
+    <string name="defaultUserName">Пользователь</string>
+    <string name="statusMessageSuggestedPart">\ предложил </string>
     <string name="statusMessageAnonymouslyPart">анонимно</string>
     <string name="statusMessageNotAnonymouslyPart">не анонимно</string>
     <string name="buttonTextAccept">Принять</string>
     <string name="buttonTextBan">Забанить</string>
     <string name="buttonTextReject">Отклонить</string>
-    <string name="defaultUserName">ссылка</string>
 </resources>

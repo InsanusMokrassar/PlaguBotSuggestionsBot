@@ -16,7 +16,8 @@
   "chats": {
     "targetChat": 12345678,
     "cacheChat": 12345678,
-    "suggestionsChat": 12345678
+    "suggestionsChat": 12345678,
+    "language": "en"
   },
   "publisher": {
     "beforeMessage": "/start_post",

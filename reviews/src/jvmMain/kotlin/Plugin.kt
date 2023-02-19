@@ -34,6 +34,7 @@ import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.types.chat.PrivateChat
 import dev.inmo.tgbotapi.types.message.textsources.link
+import dev.inmo.tgbotapi.types.message.textsources.mention
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
 import dev.inmo.tgbotapi.types.userLink
@@ -74,15 +75,27 @@ object Plugin : Plugin {
         ): MessageMetaInfo? {
             val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
             val user = runCatchingSafely {
-                getChat(suggestion.user).userOrNull()
+                getChat(suggestion.user).privateChatOrNull()
             }.getOrNull()
             val statusString = suggestion.status.titleResource.localized(chatsConfig.locale)
 
             val entities = buildEntities {
                 underline(statusString) + "\n\n"
 
-                +ReviewsResources.strings.statusMessageUserPrefix.localized(chatsConfig.locale)
-                +link(user?.name ?: ReviewsResources.strings.defaultUserName.localized(chatsConfig.locale), suggestion.user.userLink)
+                when {
+                    user == null -> {
+                        +link(ReviewsResources.strings.defaultUserName.localized(chatsConfig.locale), suggestion.user.userLink)
+                    }
+                    user.username == null -> {
+                        +link(user.name, suggestion.user.chatId.userLink)
+                    }
+                    else -> {
+                        user.username ?.let {
+                            +mention(it)
+                        } ?: +link(user.name, suggestion.user.chatId.userLink)
+                    }
+                }
+
                 +ReviewsResources.strings.statusMessageSuggestedPart.localized(chatsConfig.locale)
                 if (suggestion.isAnonymous) {
                     underline(ReviewsResources.strings.statusMessageAnonymouslyPart.localized(chatsConfig.locale))
