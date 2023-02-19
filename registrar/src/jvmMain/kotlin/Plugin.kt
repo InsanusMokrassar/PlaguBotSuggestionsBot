@@ -21,7 +21,6 @@ import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
-import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitContentMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitTextMessage
 import dev.inmo.tgbotapi.extensions.behaviour_builder.strictlyOn
@@ -46,6 +45,8 @@ import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.regular
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.common.StartChainConflictSolver
+import dev.inmo.plagubot.suggestionsbot.common.ietfLanguageCodeOrDefault
+import dev.inmo.plagubot.suggestionsbot.common.locale
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.SuggestionsMessageMetaInfosExposedRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
@@ -55,9 +56,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitAnyConten
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
-import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
-import dev.inmo.tgbotapi.types.message.textsources.mention
 import dev.inmo.tgbotapi.utils.bold
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
@@ -161,13 +160,12 @@ object Plugin : Plugin {
         }
         suggestionsRepo.deletedObjectsIdsFlow.subscribeSafelyWithoutExceptions(koin.get()) {
             suggestionsMessagesRepo.get(it) ?.let {
-                edit(it.chatId, it.messageId, "Suggestion has been removed")
+                edit(it.chatId, it.messageId, RegistrarResources.strings.suggestionRemoved.localized())
             }
         }
 
         onMessageDataCallbackQuery(cancelButtonData) {
             val suggestionId = suggestionsMessagesRepo.getSuggestionId(it.message.chat.id, it.message.messageId) ?: let { _ ->
-                answer(it, "Nothing to cancel here")
                 return@onMessageDataCallbackQuery
             }
 
@@ -183,21 +181,20 @@ object Plugin : Plugin {
             fun buildKeyboard() = flatInlineKeyboard {
                 if (state.messages.isNotEmpty()) {
                     dataButton(
-                        "Finish",
+                        RegistrarResources.strings.finishPostCreatingButtonText.localized(state.locale),
                         buttonUuid
                     )
                 }
                 dataButton(
-                    "Cancel",
+                    RegistrarResources.strings.cancelPostCreatingButtonText.localized(state.locale),
                     cancelUuid
                 )
-                val anonStatus = if (state.isAnonymous) {
-                    "✅"
-                } else {
-                    "❌"
-                }
                 dataButton(
-                    "$anonStatus Anonymous",
+                    if (state.isAnonymous) {
+                        RegistrarResources.strings.anonymousPostCreatingButtonText.localized(state.locale)
+                    } else {
+                        RegistrarResources.strings.notAnonymousPostCreatingButtonText.localized(state.locale)
+                    },
                     toggleAnonymousUuid
                 )
             }
@@ -205,11 +202,13 @@ object Plugin : Plugin {
             val messageToDelete = send(
                 state.context,
                 buildEntities {
-                    if (state.messages.isNotEmpty()) {
-                        regular("Your message(s) has been registered. You may send new ones or push \"Finish\" to finalize your suggestion")
-                    } else {
-                        regular("Ok, send me your messages for new suggestion")
-                    }
+                    regular(
+                        if (state.messages.isNotEmpty()) {
+                            RegistrarResources.strings.partRegisteredText.localized(state.locale)
+                        } else {
+                            RegistrarResources.strings.startPostRegistrationText.localized(state.locale)
+                        }
+                    )
                 },
                 replyMarkup = buildKeyboard(),
                 replyToMessageId = state.messages.lastOrNull() ?.messageMetaInfo ?.messageId
@@ -256,18 +255,20 @@ object Plugin : Plugin {
                     emptyList<ContentMessage<MessageContent>>()
                 }
             } ?.ifEmpty {
-                edit(messageToDelete, "Ok, finishing your request")
+                edit(messageToDelete, RegistrarResources.strings.finishPostRegistrationText.localized(state.locale))
                 return@strictlyOn RegistrationState.Finish(
                     state.context,
                     state.messages,
-                    state.isAnonymous
+                    state.isAnonymous,
+                    state.languageCode
                 )
             } ?.flatMapIndexed { i, it ->
                 SuggestionContentInfo.fromMessage(it, state.messages.size + i)
             } ?: return@strictlyOn RegistrationState.Finish(
                 state.context,
                 emptyList(),
-                state.isAnonymous
+                state.isAnonymous,
+                state.languageCode
             ).also {
                 runCatchingSafely {
                     delete(messageToDelete)
@@ -277,7 +278,8 @@ object Plugin : Plugin {
             RegistrationState.InProcess(
                 state.context,
                 state.messages + newMessagesInfo,
-                state.isAnonymous
+                state.isAnonymous,
+                state.languageCode
             ).also {
                 delete(messageToDelete)
             }
@@ -286,7 +288,10 @@ object Plugin : Plugin {
         strictlyOn { state: RegistrationState.Finish ->
             when {
                 state.messages.isEmpty() -> {
-                    send(state.context, "Suggestion has been cancelled")
+                    send(
+                        state.context,
+                        RegistrarResources.strings.cancelPostRegistrationText.localized(state.locale)
+                    )
                 }
                 else -> suggestionsRepo.create(
                     NewSuggestion(SuggestionStatus.Created(DateTime.now()), state.context, state.isAnonymous, state.messages)
@@ -303,13 +308,21 @@ object Plugin : Plugin {
         }
 
         onCommand("start_suggestion", initialFilter = registrarCommandsFilter) {
-            startChain(RegistrationState.InProcess(it.chat.id.toChatId(), emptyList()))
+            startChain(RegistrationState.InProcess(
+                it.chat.id.toChatId(),
+                emptyList(),
+                languageCode = it.chat.userOrNull().ietfLanguageCodeOrDefault
+            ))
         }
 
         onContentMessage (
             initialFilter = registrarCommandsFilter * !firstMessageNotCommandFilter
         ) {
-            startChain(RegistrationState.InProcess(it.chat.id.toChatId(), SuggestionContentInfo.fromMessage(it, 0)))
+            startChain(RegistrationState.InProcess(
+                it.chat.id.toChatId(),
+                SuggestionContentInfo.fromMessage(it, 0),
+                languageCode = it.chat.userOrNull().ietfLanguageCodeOrDefault
+            ))
         }
         koin.getOrNull<InlineTemplatesRepo>() ?.apply {
             addTemplate(

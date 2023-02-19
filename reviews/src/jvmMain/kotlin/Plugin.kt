@@ -11,22 +11,19 @@ import dev.inmo.micro_utils.repos.set
 import dev.inmo.micro_utils.repos.unset
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
+import dev.inmo.plagubot.suggestionsbot.common.locale
+import dev.inmo.plagubot.suggestionsbot.reviews.ReviewsResources
 import dev.inmo.plagubot.suggestionsbot.reviews.repo.ExposedReviewMessagesInfo
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.SuggestionsMessageMetaInfosExposedRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
-import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionStatus
 import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
 import dev.inmo.tgbotapi.extensions.api.delete
 import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.send.reply
-import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
-import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitMessageDataCallbackQuery
-import dev.inmo.tgbotapi.extensions.behaviour_builder.oneOf
-import dev.inmo.tgbotapi.extensions.behaviour_builder.strictlyOn
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
@@ -38,16 +35,10 @@ import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.types.chat.PrivateChat
 import dev.inmo.tgbotapi.types.message.textsources.link
 import dev.inmo.tgbotapi.utils.buildEntities
-import dev.inmo.tgbotapi.types.message.textsources.mention
 import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
 import dev.inmo.tgbotapi.types.userLink
 import dev.inmo.tgbotapi.utils.bold
-import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
-import kotlinx.serialization.Serializable
+import dev.inmo.tgbotapi.utils.underline
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
@@ -83,21 +74,21 @@ object Plugin : Plugin {
         ): MessageMetaInfo? {
             val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
             val user = runCatchingSafely {
-                getChat(suggestion.user).privateChatOrNull()
+                getChat(suggestion.user).userOrNull()
             }.getOrNull()
-            val statusString = when (suggestion.status) {
-                is SuggestionStatus.Created -> "Created"
-                is SuggestionStatus.OnReview -> "In review"
-                is SuggestionStatus.Accepted -> "Accepted"
-                is SuggestionStatus.Banned -> "User banned"
-                is SuggestionStatus.Rejected -> "Rejected"
-                is SuggestionStatus.Cancelled -> "Cancelled"
-            }
+            val statusString = suggestion.status.titleResource.localized(chatsConfig.locale)
 
             val entities = buildEntities {
-                +"User: " + link(user?.name ?: "link", suggestion.user.userLink) + "\n"
-                +"Anonymous: " + (if (suggestion.isAnonymous) "✅" else "❌") + "\n"
-                +"Status: " + bold(statusString)
+                underline(statusString) + "\n\n"
+
+                +ReviewsResources.strings.statusMessageUserPrefix.localized(chatsConfig.locale)
+                +link(user?.name ?: "link", suggestion.user.userLink)
+                +ReviewsResources.strings.statusMessageSuggestedPart.localized(chatsConfig.locale)
+                if (suggestion.isAnonymous) {
+                    underline(ReviewsResources.strings.statusMessageAnonymouslyPart.localized(chatsConfig.locale))
+                } else {
+                    underline(ReviewsResources.strings.statusMessageNotAnonymouslyPart.localized(chatsConfig.locale))
+                }
             }
 
             val replyMarkup = when (suggestion.status) {

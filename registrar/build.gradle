@@ -3,6 +3,7 @@ plugins {
     id "org.jetbrains.kotlin.plugin.serialization"
 }
 
+apply plugin: "dev.icerock.mobile.multiplatform-resources"
 apply from: "$mppJavaProjectPresetPath"
 
 kotlin {
@@ -11,7 +12,14 @@ kotlin {
             dependencies {
                 api project(":plagubot.suggestionsbot.common")
                 api project(":plagubot.suggestionsbot.suggestions")
+                api libs.moko.resources
             }
         }
     }
+}
+
+multiplatformResources {
+    multiplatformResourcesPackage = "$group.${project.name}" // required
+    multiplatformResourcesClassName = "RegistrarResources" // optional, default MR
+    iosBaseLocalizationRegion = "en" // optional, default "en"
 }

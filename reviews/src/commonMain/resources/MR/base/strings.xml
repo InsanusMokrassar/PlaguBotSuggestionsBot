@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="statusMessageUserPrefix">User </string>
+    <string name="statusMessageSuggestedPart"> suggested </string>
+    <string name="statusMessageAnonymouslyPart">anonymously</string>
+    <string name="statusMessageNotAnonymouslyPart">non anonymously</string>
+</resources>

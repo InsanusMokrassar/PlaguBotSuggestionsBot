@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="statusCreated">Создано</string>
+    <string name="statusOnReview">На модерации</string>
+    <string name="statusCancelled">Отменено</string>
+    <string name="statusAccepted">Принято</string>
+    <string name="statusRejected">Отклонено</string>
+    <string name="statusBanned">Забанен</string>
+    <string name="statusReviewed">Промодерировано</string>
+    <string name="statusDone">Рассмотрено</string>
+    <string name="statusCancelable">Отменяемо</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="suggestionRemoved">Suggestion has been removed</string>
+    <string name="nothingToCancel">Nothing to cancel here</string>
+    <string name="finishPostCreatingButtonText">Finish</string>
+    <string name="cancelPostCreatingButtonText">Cancel</string>
+    <string name="anonymousPostCreatingButtonText">Anonymous ✅</string>
+    <string name="notAnonymousPostCreatingButtonText">Anonymous ❌</string>
+    <string name="partRegisteredText">Your message(s) has been registered. You may send new ones or push "Finish" to finalize your suggestion</string>
+    <string name="startPostRegistrationText">Ok, send me your messages for new suggestion</string>
+    <string name="finishPostRegistrationText">Ok, finishing your request</string>
+    <string name="cancelPostRegistrationText">Suggestion has been cancelled</string>
+</resources>

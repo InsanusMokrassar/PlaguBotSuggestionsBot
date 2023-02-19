@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="suggestionRemoved">Предложение было удалено</string>
+    <string name="nothingToCancel">Нечего отменять</string>
+    <string name="finishPostCreatingButtonText">Завершить</string>
+    <string name="cancelPostCreatingButtonText">Отменить</string>
+    <string name="anonymousPostCreatingButtonText">Анонимно</string>
+    <string name="notAnonymousPostCreatingButtonText">НЕ анонимно</string>
+    <string name="partRegisteredText">Ваше сообщение(я) было зарегистрировано. Отправьте мне сообщение для добавления в предложение или нажмите "Завершить" чтобы зафиксировать пост</string>
+    <string name="startPostRegistrationText">Понял, отправьте мне сообщения вашего поста</string>
+    <string name="finishPostRegistrationText">Понял, фиксирую ваш пост</string>
+    <string name="cancelPostRegistrationText">Предложение было отменено</string>
+</resources>

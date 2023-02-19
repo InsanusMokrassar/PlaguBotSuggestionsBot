@@ -7,6 +7,8 @@ plagubot = "3.4.1"
 plagubot-plugins = "0.8.0"
 tgbotapi-libraries = "0.8.1"
 
+moko-resources = "0.20.1"
+
 tgbotapi = "5.1.1-branch_5.1.1-build1427"
 
 psql = "42.5.0"
@@ -37,11 +39,14 @@ psql = { module = "org.postgresql:postgresql", version.ref = "psql" }
 microutils-repos-exposed = { module = "dev.inmo:micro_utils.repos.exposed", version.ref = "microutils" }
 microutils-koin = { module = "dev.inmo:micro_utils.koin", version.ref = "microutils" }
 
+moko-resources = { module = "dev.icerock.moko:resources", version.ref = "moko-resources" }
+
 # buildscript classpaths
 
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-serialization-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 kotlin-dokka-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
+moko-resources-plugin = { module = "dev.icerock.moko:resources-generator", version.ref = "moko-resources" }
 
 [plugins]
 
