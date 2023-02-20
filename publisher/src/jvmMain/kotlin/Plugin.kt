@@ -36,6 +36,7 @@ import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
 import dev.inmo.tgbotapi.types.message.textsources.hashtag
 import dev.inmo.tgbotapi.types.message.textsources.link
 import dev.inmo.tgbotapi.types.message.textsources.mention
+import dev.inmo.tgbotapi.types.message.textsources.regular
 import dev.inmo.tgbotapi.types.userLink
 import dev.inmo.tgbotapi.utils.buildEntities
 import kotlinx.coroutines.delay
@@ -68,13 +69,13 @@ object Plugin : Plugin {
             template ?: return emptyList()
 
             val userMention by lazy {
-                if (suggestion.isAnonymous) {
-                    hashtag(anonText)
-                } else {
-                    link(
-                        suggester ?.name ?: defaultUserText,
-                        suggestion.user.chatId.userLink
-                    )
+                when {
+                    suggestion.isAnonymous -> hashtag(anonText)
+                    suggester == null -> link(defaultUserText, suggestion.user.chatId.userLink)
+                    suggester.username == null && suggester.allowCreateUserIdLink -> link(suggester.name, suggester.id.userLink)
+                    else -> suggester.username ?.let {
+                        mention(it)
+                    } ?: regular(suggester.name)
                 }
             }
             val parts = template.split("$")
