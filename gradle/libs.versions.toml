@@ -9,11 +9,13 @@ tgbotapi-libraries = "0.8.1"
 
 moko-resources = "0.20.1"
 
-tgbotapi = "5.1.1-branch_5.1.1-build1427"
+tgbotapi = "5.2.1"
 
 psql = "42.5.0"
 
-microutils = "0.16.8"
+microutils = "0.16.12-branch_0.16.12-build369"
+
+ksp = "1.7.22-1.0.8"
 
 dokka = "1.7.20"
 
@@ -37,14 +39,19 @@ tgbotapi = { module = "dev.inmo:tgbotapi", version.ref = "tgbotapi" }
 psql = { module = "org.postgresql:postgresql", version.ref = "psql" }
 
 microutils-repos-exposed = { module = "dev.inmo:micro_utils.repos.exposed", version.ref = "microutils" }
+microutils-repos-cache = { module = "dev.inmo:micro_utils.repos.cache", version.ref = "microutils" }
 microutils-koin = { module = "dev.inmo:micro_utils.koin", version.ref = "microutils" }
+microutils-koin-generator = { module = "dev.inmo:micro_utils.koin.generator", version.ref = "microutils" }
 
 moko-resources = { module = "dev.icerock.moko:resources", version.ref = "moko-resources" }
+
+ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
 # buildscript classpaths
 
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-serialization-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+kotlin-ksp-plugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
 kotlin-dokka-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 moko-resources-plugin = { module = "dev.icerock.moko:resources-generator", version.ref = "moko-resources" }
 

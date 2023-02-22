@@ -1,6 +1,7 @@
 plugins {
     id "org.jetbrains.kotlin.multiplatform"
     id "org.jetbrains.kotlin.plugin.serialization"
+    id "com.google.devtools.ksp"
 }
 
 apply from: "$mppJavaProjectPresetPath"
@@ -11,9 +12,16 @@ kotlin {
         commonMain {
             dependencies {
                 api libs.microutils.koin
+                api libs.microutils.repos.cache
                 api libs.plagubot.plugin
                 api libs.tgbotapi
             }
         }
     }
+}
+dependencies {
+    add("kspJvm", libs.microutils.koin.generator)
+}
+
+ksp {
 }

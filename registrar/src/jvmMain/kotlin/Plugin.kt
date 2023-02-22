@@ -45,8 +45,11 @@ import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.utils.regular
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.common.StartChainConflictSolver
+import dev.inmo.plagubot.suggestionsbot.common.getOrDefault
 import dev.inmo.plagubot.suggestionsbot.common.ietfLanguageCodeOrDefault
+import dev.inmo.plagubot.suggestionsbot.common.languagesRepo
 import dev.inmo.plagubot.suggestionsbot.common.locale
+import dev.inmo.plagubot.suggestionsbot.common.update
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.SuggestionsMessageMetaInfosExposedRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
 import dev.inmo.tgbotapi.extensions.api.chat.get.getChat
@@ -56,6 +59,7 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.expectations.waitAnyConten
 import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessageDataCallbackQuery
 import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.userOrNull
+import dev.inmo.tgbotapi.extensions.utils.whenFromUser
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.utils.bold
@@ -91,6 +95,7 @@ object Plugin : Plugin {
         val chatsConfig = koin.get<ChatsConfig>()
         val suggestionsRepo = koin.get<SuggestionsRepo>()
         val suggestionsMessagesRepo = koin.get<SuggestionsMessageMetaInfosExposedRepo>(RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier)
+        val languagesRepo = koin.languagesRepo
 
         val cancelButtonData = "cancel"
 
@@ -99,28 +104,28 @@ object Plugin : Plugin {
             firstMetaInfo: MessageMetaInfo?
         ): MessageMetaInfo? {
             val managementMessage: MessageMetaInfo? = suggestionsMessagesRepo.get(suggestion.id)
-            val user = getChat(suggestion.user).privateChatOrNull()
+            val locale = languagesRepo.getOrDefault(suggestion.user).locale
             val statusString = when (suggestion.status) {
                 is SuggestionStatus.Created,
                 is SuggestionStatus.OnReview,
-                is SuggestionStatus.Cancelled -> suggestion.status.titleResource.localized(user.locale)
-                is SuggestionStatus.Reviewed -> SuggestionStatus.Reviewed.titleResource.localized(user.locale)
+                is SuggestionStatus.Cancelled -> suggestion.status.titleResource.localized(locale)
+                is SuggestionStatus.Reviewed -> SuggestionStatus.Reviewed.titleResource.localized(locale)
             }
 
             val entities = buildEntities {
                 underline(statusString) + "\n\n"
-                regular(RegistrarResources.strings.youSuggestedText.localized(user.locale))
+                regular(RegistrarResources.strings.youSuggestedText.localized(locale))
                 if (suggestion.isAnonymous) {
-                    underline(RegistrarResources.strings.anonymouslyText.localized(user.locale))
+                    underline(RegistrarResources.strings.anonymouslyText.localized(locale))
                 } else {
-                    underline(RegistrarResources.strings.nonAnonymouslyText.localized(user.locale))
+                    underline(RegistrarResources.strings.nonAnonymouslyText.localized(locale))
                 }
             }
 
             val replyMarkup = when (suggestion.status) {
                 is SuggestionStatus.Created,
                 is SuggestionStatus.OnReview -> flatInlineKeyboard {
-                    dataButton(RegistrarResources.strings.cancelButtonText.localized(user.locale), cancelButtonData)
+                    dataButton(RegistrarResources.strings.cancelButtonText.localized(locale), cancelButtonData)
                 }
                 is SuggestionStatus.Done -> null
             }
@@ -172,6 +177,7 @@ object Plugin : Plugin {
         }
 
         onMessageDataCallbackQuery(cancelButtonData) {
+            languagesRepo.update(it.user)
             val suggestionId = suggestionsMessagesRepo.getSuggestionId(it.message.chat.id, it.message.messageId) ?: let { _ ->
                 return@onMessageDataCallbackQuery
             }
@@ -315,21 +321,31 @@ object Plugin : Plugin {
         }
 
         onCommand("start_suggestion", initialFilter = registrarCommandsFilter) {
-            startChain(RegistrationState.InProcess(
-                it.chat.id.toChatId(),
-                emptyList(),
-                languageCode = it.chat.userOrNull().ietfLanguageCodeOrDefault
-            ))
+            it.whenFromUser {
+                languagesRepo.update(it.user)
+            }
+            startChain(
+                RegistrationState.InProcess(
+                    it.chat.id.toChatId(),
+                    emptyList(),
+                    languageCode = languagesRepo.getOrDefault(it.chat.id)
+                )
+            )
         }
 
         onContentMessage (
             initialFilter = registrarCommandsFilter * !firstMessageNotCommandFilter
         ) {
-            startChain(RegistrationState.InProcess(
-                it.chat.id.toChatId(),
-                SuggestionContentInfo.fromMessage(it, 0),
-                languageCode = it.chat.userOrNull().ietfLanguageCodeOrDefault
-            ))
+            it.whenFromUser {
+                languagesRepo.update(it.user)
+            }
+            startChain(
+                RegistrationState.InProcess(
+                    it.chat.id.toChatId(),
+                    SuggestionContentInfo.fromMessage(it, 0),
+                    languageCode = languagesRepo.getOrDefault(it.chat.id)
+                )
+            )
         }
         koin.getOrNull<InlineTemplatesRepo>() ?.apply {
             addTemplate(
