@@ -1,21 +1,21 @@
 [versions]
 
-kotlin = "1.7.22"
-kotlin-serialization = "1.4.1"
+kotlin = "1.8.10"
+kotlin-serialization = "1.5.0"
 
-plagubot = "3.4.1"
-plagubot-plugins = "0.8.0"
-tgbotapi-libraries = "0.8.1"
+plagubot = "4.0.0"
+plagubot-plugins = "0.9.0"
+tgbotapi-libraries = "0.9.0"
 
 moko-resources = "0.20.1"
 
-tgbotapi = "5.2.1"
+tgbotapi = "6.0.0"
 
 psql = "42.5.0"
 
-microutils = "0.16.12-branch_0.16.12-build369"
+microutils = "0.17.0"
 
-ksp = "1.7.22-1.0.8"
+ksp = "1.8.10-1.0.9"
 
 dokka = "1.7.20"
 

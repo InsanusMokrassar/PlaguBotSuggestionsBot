@@ -16,6 +16,7 @@ import dev.inmo.tgbotapi.extensions.api.edit.caption.editMessageCaption
 import dev.inmo.tgbotapi.extensions.api.edit.edit
 import dev.inmo.tgbotapi.extensions.api.forwardMessage
 import dev.inmo.tgbotapi.extensions.api.send.copyMessage
+import dev.inmo.tgbotapi.extensions.api.send.reply
 import dev.inmo.tgbotapi.extensions.api.send.send
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContextWithFSM
 import dev.inmo.tgbotapi.extensions.utils.contentMessageOrNull
@@ -25,9 +26,11 @@ import dev.inmo.tgbotapi.extensions.utils.withContentOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
+import dev.inmo.tgbotapi.requests.send.SendTextMessage
 import dev.inmo.tgbotapi.types.chat.ExtendedBot
 import dev.inmo.tgbotapi.types.chat.ExtendedPrivateChat
 import dev.inmo.tgbotapi.types.chat.PrivateChat
+import dev.inmo.tgbotapi.types.message.abstracts.ContentMessage
 import dev.inmo.tgbotapi.types.message.content.MediaContent
 import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.types.message.content.TextedMediaContent
@@ -133,7 +136,7 @@ object Plugin : Plugin {
                 )
             }
             delay(500L)
-            val resultMessage = config ?.suggestionNoteTextSources(
+            val suggestionTextSources = config ?.suggestionNoteTextSources(
                 it,
                 runCatchingSafely {
                     getChat(it.user).extendedPrivateChatOrNull()
@@ -141,7 +144,9 @@ object Plugin : Plugin {
                 bot
             ) ?.takeIf {
                 it.isNotEmpty()
-            } ?.let { textSources ->
+            }
+            var resultMessageChanged = false
+            val resultMessage = suggestionTextSources ?.let { textSources ->
                 runCatchingSafely {
                     message.contentMessageOrNull() ?.let {
                         val resend = it.content.createResend(
@@ -152,17 +157,32 @@ object Plugin : Plugin {
                                 editMessageCaption(it, (it.content as? TextedMediaContent) ?.textSources ?.let { it + RegularTextSource("\n\n") + textSources } ?: return@let )
                             } ?: it.withContentOrNull<TextContent>() ?.let {
                                 edit(it, it.content.textSources + RegularTextSource("\n\n") + textSources)
+                            } ?.also {
+                                resultMessageChanged = true
                             }
                         }
                     }
                 }
             } ?.getOrNull() ?: message
-            publisher.resend(
+            val sentInfos = publisher.resend(
                 chatsConfig.targetChat,
                 listOf(MessageMetaInfo(resultMessage).copy(group = firstAvailableMessageInfo.messageMetaInfo.group)) + ((sourceSortedContent.dropWhile { it != firstAvailableMessageInfo } - firstAvailableMessageInfo)).map {
                     it.messageMetaInfo
                 }
             )
+            sentInfos.firstOrNull() ?.second ?.also {
+                suggestionTextSources ?.also { textSources ->
+                    if (!resultMessageChanged) {
+                        runCatchingSafely {
+                            reply(
+                                it.chatId,
+                                it.messageId,
+                                textSources
+                            )
+                        }
+                    }
+                }
+            }
             delay(500L)
             config ?.afterMessage ?.let {
                 send(
