@@ -135,7 +135,7 @@ object Plugin : Plugin {
                     it
                 )
             }
-            delay(500L)
+            delay(1100L)
             val suggestionTextSources = config ?.suggestionNoteTextSources(
                 it,
                 runCatchingSafely {
@@ -183,7 +183,7 @@ object Plugin : Plugin {
                     }
                 }
             }
-            delay(500L)
+            delay(1100L)
             config ?.afterMessage ?.let {
                 send(
                     chatsConfig.targetChat,
