@@ -135,7 +135,6 @@ object Plugin : Plugin {
                     it
                 )
             }
-            delay(200L)
             val suggestionTextSources = config ?.suggestionNoteTextSources(
                 it,
                 runCatchingSafely {
@@ -145,6 +144,7 @@ object Plugin : Plugin {
             ) ?.takeIf {
                 it.isNotEmpty()
             }
+            delay(1100L)
             var resultMessageChanged = false
             val resultMessage = suggestionTextSources ?.let { textSources ->
                 runCatchingSafely {
@@ -153,11 +153,11 @@ object Plugin : Plugin {
                             chatsConfig.cacheChat,
                         )
                         execute(resend).contentMessageOrNull() ?.also {
-                            it.withContentOrNull<TextedMediaContent>() ?.let {
+                            (it.withContentOrNull<TextedMediaContent>() ?.let {
                                 editMessageCaption(it, (it.content as? TextedMediaContent) ?.textSources ?.let { it + RegularTextSource("\n\n") + textSources } ?: return@let )
                             } ?: it.withContentOrNull<TextContent>() ?.let {
                                 edit(it, it.content.textSources + RegularTextSource("\n\n") + textSources)
-                            } ?.also {
+                            }) ?.also {
                                 resultMessageChanged = true
                             }
                         }
