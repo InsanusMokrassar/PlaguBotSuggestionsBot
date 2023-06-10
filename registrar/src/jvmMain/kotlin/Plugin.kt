@@ -1,6 +1,6 @@
 package dev.inmo.plagubot.suggestionsbot.registrar
 
-import com.soywiz.klock.DateTime
+import korlibs.time.DateTime
 import dev.inmo.micro_utils.coroutines.firstOf
 import dev.inmo.micro_utils.coroutines.runCatchingSafely
 import dev.inmo.micro_utils.coroutines.subscribeSafelyWithoutExceptions

@@ -1,6 +1,6 @@
 package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 
-import com.soywiz.klock.DateTime
+import korlibs.time.DateTime
 import dev.inmo.micro_utils.repos.exposed.*
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedStatusesRepo.Companion.statusType
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*

@@ -1,7 +1,7 @@
 package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 
 import com.benasher44.uuid.uuid4
-import com.soywiz.klock.DateTime
+import korlibs.time.DateTime
 import dev.inmo.micro_utils.repos.UpdatedValuePair
 import dev.inmo.micro_utils.repos.exposed.AbstractExposedCRUDRepo
 import dev.inmo.micro_utils.repos.exposed.initTable

@@ -4,7 +4,7 @@ import dev.inmo.micro_utils.repos.ReadCRUDRepo
 import dev.inmo.micro_utils.repos.WriteCRUDRepo
 import dev.inmo.micro_utils.repos.CRUDRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
-import com.soywiz.klock.DateTime
+import korlibs.time.DateTime
 import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageIdentifier
 import dev.inmo.tgbotapi.types.UserId

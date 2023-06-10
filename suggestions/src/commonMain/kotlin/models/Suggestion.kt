@@ -1,6 +1,6 @@
 package dev.inmo.plagubot.suggestionsbot.suggestions.models
 
-import com.soywiz.klock.DateTime
+import korlibs.time.DateTime
 import dev.inmo.tgbotapi.types.UserId
 import kotlinx.serialization.Serializable
 
