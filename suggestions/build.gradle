@@ -21,6 +21,7 @@ kotlin {
                 api libs.microutils.repos.exposed
                 api libs.plagubot.plugin
             }
+            dependsOn(commonMain)
         }
     }
 }

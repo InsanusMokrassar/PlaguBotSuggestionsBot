@@ -10,8 +10,10 @@ import dev.inmo.micro_utils.koin.annotations.GenerateKoinDefinition
 import dev.inmo.micro_utils.koin.getAllDistinct
 import dev.inmo.micro_utils.language_codes.IetfLanguageCode
 import dev.inmo.micro_utils.repos.KeyValueRepo
+import dev.inmo.micro_utils.repos.MapKeyValueRepo
 import dev.inmo.micro_utils.repos.cache.cache.FullKVCache
 import dev.inmo.micro_utils.repos.cache.cached
+import dev.inmo.micro_utils.repos.cache.full.fullyCached
 import dev.inmo.micro_utils.repos.exposed.keyvalue.ExposedKeyValueRepo
 import dev.inmo.micro_utils.repos.mappers.withMapper
 import dev.inmo.plagubot.Plugin
@@ -71,7 +73,7 @@ object Plugin : Plugin {
                 { code },
                 { json.decodeFromString(FullChatIdentifierSerializer, this) as IdChatIdentifier },
                 { IetfLanguageCode(this) }
-            ).cached(FullKVCache(), get())
+            ).fullyCached(MapKeyValueRepo(), get())
         }
     }
 

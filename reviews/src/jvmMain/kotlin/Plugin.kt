@@ -11,8 +11,6 @@ import dev.inmo.micro_utils.repos.set
 import dev.inmo.micro_utils.repos.unset
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
-import dev.inmo.plagubot.suggestionsbot.common.locale
-import dev.inmo.plagubot.suggestionsbot.reviews.ReviewsResources
 import dev.inmo.plagubot.suggestionsbot.reviews.repo.ExposedReviewMessagesInfo
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.SuggestionsMessageMetaInfosExposedRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
@@ -28,8 +26,6 @@ import dev.inmo.tgbotapi.extensions.behaviour_builder.triggers_handling.onMessag
 import dev.inmo.tgbotapi.extensions.utils.privateChatOrNull
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.dataButton
 import dev.inmo.tgbotapi.extensions.utils.types.buttons.flatInlineKeyboard
-import dev.inmo.tgbotapi.extensions.utils.types.buttons.inlineKeyboard
-import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
@@ -39,7 +35,6 @@ import dev.inmo.tgbotapi.types.message.textsources.mention
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
 import dev.inmo.tgbotapi.types.userLink
-import dev.inmo.tgbotapi.utils.bold
 import dev.inmo.tgbotapi.utils.underline
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json

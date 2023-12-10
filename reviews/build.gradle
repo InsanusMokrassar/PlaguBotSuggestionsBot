@@ -14,6 +14,9 @@ kotlin {
                 api project(":plagubot.suggestionsbot.suggestions")
             }
         }
+        jvmMain {
+            dependsOn(commonMain)
+        }
     }
 }
 
