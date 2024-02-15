@@ -65,7 +65,7 @@ class SuggestionsMessageMetaInfosExposedRepo(
         chatId: IdChatIdentifier,
         messageId: MessageId
     ) = transaction(database) {
-        select {
+        selectAll().where {
             chatIdColumn.eq(chatId.chatId).and(
                 threadIdColumn.eqOrIsNull(chatId.threadId)
             ).and(

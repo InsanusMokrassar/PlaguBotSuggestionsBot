@@ -54,7 +54,7 @@ class ExposedSuggestionsRepo(
             return RegisteredSuggestion(
                 id,
                 with(statusesRepo) {
-                    select {
+                    selectAll().where {
                         suggestionIdColumn.eq(id.string)
                     }.orderBy(
                         dateTimeColumn,
@@ -64,7 +64,7 @@ class ExposedSuggestionsRepo(
                 UserId(get(userIdColumn)),
                 get(isAnonymousColumn),
                 with(contentRepo) {
-                    select { suggestionIdColumn.eq(id.string) }.map {
+                    selectAll().where { suggestionIdColumn.eq(id.string) }.map {
                         it.asObject
                     }
                 }
@@ -84,7 +84,7 @@ class ExposedSuggestionsRepo(
         return RegisteredSuggestion(
             id,
             with(statusesRepo) {
-                select {
+                selectAll().where {
                     suggestionIdColumn.eq(id.string)
                 }.orderBy(
                     dateTimeColumn,
@@ -94,7 +94,7 @@ class ExposedSuggestionsRepo(
             UserId(get(userIdColumn)),
             get(isAnonymousColumn),
             with(contentRepo) {
-                select { suggestionIdColumn.eq(id.string) }.map {
+                selectAll().where { suggestionIdColumn.eq(id.string) }.map {
                     it.asObject
                 }
             }
@@ -114,7 +114,7 @@ class ExposedSuggestionsRepo(
 
     private fun updateStatusWithoutTransaction(suggestionId: SuggestionId, status: SuggestionStatus) {
         with(statusesRepo) {
-            val latestStatus = select {
+            val latestStatus = selectAll().where {
                 suggestionIdColumn.eq(suggestionId.string)
             }.orderBy(dateTimeColumn, SortOrder.DESC).limit(1).firstOrNull() ?.asObject
             if (latestStatus ?.statusType() != status.statusType()) {
@@ -185,7 +185,7 @@ class ExposedSuggestionsRepo(
                 existsIds
             } else {
                 existsIds.filter {
-                    select { selectById(it) }.limit(1).none()
+                    selectAll().where { selectById(it) }.limit(1).none()
                 }
             }
         }.forEach {
@@ -199,7 +199,7 @@ class ExposedSuggestionsRepo(
         status: SuggestionStatus
     ): RegisteredSuggestion? = transaction(database) {
         updateStatusWithoutTransaction(suggestionId, status)
-        select { selectById(suggestionId) }.limit(1).firstOrNull() ?.asObject
+        selectAll().where { selectById(suggestionId) }.limit(1).firstOrNull() ?.asObject
     } ?.also {
         _updatedObjectsFlow.emit(it)
     }
@@ -207,7 +207,7 @@ class ExposedSuggestionsRepo(
     override suspend fun getIdByChatAndMessage(chatId: IdChatIdentifier, messageId: MessageIdentifier): SuggestionId? {
         return transaction(database) {
             with(contentRepo) {
-                select {
+                selectAll().where {
                     chatIdColumn.eq(chatId.chatId)
                         .and(chatId.threadId ?.let { threadIdColumn.eq(it) } ?: threadIdColumn.isNull())
                         .and(messageIdColumn.eq(messageId))
@@ -218,7 +218,7 @@ class ExposedSuggestionsRepo(
 
     override suspend fun getFirstMessageInfo(suggestionId: SuggestionId): SuggestionContentInfo? = transaction(database) {
         with(contentRepo) {
-            select { suggestionIdColumn.eq(suggestionId.string) }.limit(1).firstOrNull() ?.asObject
+            selectAll().where { suggestionIdColumn.eq(suggestionId.string) }.limit(1).firstOrNull() ?.asObject
         }
     }
 
@@ -226,18 +226,18 @@ class ExposedSuggestionsRepo(
         suggestionId: SuggestionId
     ): List<SuggestionStatus> = transaction(database) {
         with (statusesRepo) {
-            select { suggestionIdColumn.eq(suggestionId.string) }.map { it.asObject }
+            selectAll().where { suggestionIdColumn.eq(suggestionId.string) }.map { it.asObject }
         }
     }.sortedBy {
         it.dateTime
     }
 
     override suspend fun isUserHaveBannedSuggestions(userid: UserId): Boolean = transaction(database) {
-        select {
+        selectAll().where {
             userIdColumn.eq(userid.chatId).and(
                 idColumn.inSubQuery(
                     with(statusesRepo) {
-                        slice(suggestionIdColumn).select {
+                        select(suggestionIdColumn).where {
                             statusTypeColumn.eq(
                                 SuggestionStatus.Banned::class.statusType()
                             )

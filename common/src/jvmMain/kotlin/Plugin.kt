@@ -1,4 +1,10 @@
-@file:GenerateKoinDefinition("languagesRepo", KeyValueRepo::class, IdChatIdentifier::class, IetfLanguageCode::class, nullable = false)
+@file:GenerateKoinDefinition(
+    "languagesRepo",
+    KeyValueRepo::class,
+    IdChatIdentifier::class,
+    IetfLang::class,
+    nullable = false
+)
 package dev.inmo.plagubot.suggestionsbot.common
 
 import dev.inmo.micro_utils.fsm.common.State
@@ -8,11 +14,9 @@ import dev.inmo.micro_utils.fsm.common.managers.DefaultStatesManagerRepo
 import dev.inmo.micro_utils.fsm.common.managers.InMemoryDefaultStatesManagerRepo
 import dev.inmo.micro_utils.koin.annotations.GenerateKoinDefinition
 import dev.inmo.micro_utils.koin.getAllDistinct
-import dev.inmo.micro_utils.language_codes.IetfLanguageCode
+import dev.inmo.micro_utils.language_codes.IetfLang
 import dev.inmo.micro_utils.repos.KeyValueRepo
 import dev.inmo.micro_utils.repos.MapKeyValueRepo
-import dev.inmo.micro_utils.repos.cache.cache.FullKVCache
-import dev.inmo.micro_utils.repos.cache.cached
 import dev.inmo.micro_utils.repos.cache.full.fullyCached
 import dev.inmo.micro_utils.repos.exposed.keyvalue.ExposedKeyValueRepo
 import dev.inmo.micro_utils.repos.mappers.withMapper
@@ -72,7 +76,7 @@ object Plugin : Plugin {
                 { json.encodeToString(FullChatIdentifierSerializer, this) },
                 { code },
                 { json.decodeFromString(FullChatIdentifierSerializer, this) as IdChatIdentifier },
-                { IetfLanguageCode(this) }
+                { IetfLang(this) }
             ).fullyCached(MapKeyValueRepo(), get())
         }
     }

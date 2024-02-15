@@ -62,6 +62,7 @@ import dev.inmo.tgbotapi.extensions.utils.userOrNull
 import dev.inmo.tgbotapi.extensions.utils.whenFromUser
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.invoke
+import dev.inmo.tgbotapi.types.ReplyParameters
 import dev.inmo.tgbotapi.utils.bold
 import dev.inmo.tgbotapi.utils.underline
 import kotlinx.coroutines.flow.debounce
@@ -224,7 +225,9 @@ object Plugin : Plugin {
                     )
                 },
                 replyMarkup = buildKeyboard(),
-                replyToMessageId = state.messages.lastOrNull() ?.messageMetaInfo ?.messageId
+                replyParameters = state.messages.lastOrNull() ?.messageMetaInfo ?.let {
+                    ReplyParameters(it.chatId, it.messageId)
+                }
             )
 
             waitMessageDataCallbackQuery().filter {

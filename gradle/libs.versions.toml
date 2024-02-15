@@ -1,21 +1,21 @@
 [versions]
 
-kotlin = "1.9.21"
+kotlin = "1.9.22"
 kotlin-serialization = "1.6.2"
 
-plagubot = "7.4.1"
-plagubot-plugins = "0.17.1"
-tgbotapi-libraries = "0.17.1"
+plagubot = "8.1.1"
+plagubot-plugins = "0.18.1"
+tgbotapi-libraries = "0.18.1"
 
 moko-resources = "0.23.0"
 
-tgbotapi = "9.4.2"
+tgbotapi = "10.0.1"
 
 psql = "42.6.0"
 
-microutils = "0.20.19"
+microutils = "0.20.34"
 
-ksp = "1.9.21-1.0.15"
+ksp = "1.9.22-1.0.16"
 
 dokka = "1.9.10"
 

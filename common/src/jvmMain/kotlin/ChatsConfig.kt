@@ -1,5 +1,6 @@
 package dev.inmo.plagubot.suggestionsbot.common
 
+import dev.inmo.micro_utils.language_codes.IetfLang
 import dev.inmo.micro_utils.language_codes.IetfLanguageCode
 import dev.inmo.tgbotapi.types.ChatIdentifier
 import dev.inmo.tgbotapi.types.FullChatIdentifierSerializer
@@ -15,7 +16,7 @@ data class ChatsConfig(
     val targetChat: IdChatIdentifier,
     @Serializable(FullChatIdentifierSerializer::class)
     val cacheChat: IdChatIdentifier,
-    val language: IetfLanguageCode = IetfLanguageCode.English
+    val language: IetfLang = IetfLang.English
 ) {
     val locale: Locale
         get() = language.locale
