@@ -6,6 +6,7 @@ import dev.inmo.micro_utils.fsm.common.State
 import dev.inmo.plagubot.Plugin
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.RegisteredSuggestion
+import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionContentInfo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionStatus
 import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.abstracts.Texted
@@ -30,6 +31,7 @@ import dev.inmo.tgbotapi.requests.send.SendTextMessage
 import dev.inmo.tgbotapi.types.chat.ExtendedBot
 import dev.inmo.tgbotapi.types.chat.ExtendedPrivateChat
 import dev.inmo.tgbotapi.types.chat.PrivateChat
+import dev.inmo.tgbotapi.types.message.abstracts.AccessibleMessage
 import dev.inmo.tgbotapi.types.message.abstracts.ContentMessage
 import dev.inmo.tgbotapi.types.message.content.MediaContent
 import dev.inmo.tgbotapi.types.message.content.TextContent
@@ -120,14 +122,13 @@ object Plugin : Plugin {
         suggestionsRepo.updatedObjectsFlow.filter {
             it.status is SuggestionStatus.Accepted
         }.subscribeSafelyWithoutExceptions(koin.get()) {
-            val sourceSortedContent = it.content.sortedBy { it.order }
-            val firstAvailableMessageInfoToMessage = sourceSortedContent.firstNotNullOfOrNull {
-                runCatchingSafely {
+            val sourceSortedContentToActualState: List<Pair<SuggestionContentInfo, AccessibleMessage>> = it.content.sortedBy { it.order }.mapNotNull {
+                it to (runCatchingSafely {
                     forwardMessage(it.messageMetaInfo.chatId, toChatId = chatsConfig.cacheChat, it.messageMetaInfo.messageId)
-                }.getOrNull() ?.let { message ->
-                    it to message
-                }
-            } ?: return@subscribeSafelyWithoutExceptions
+                }.getOrNull() ?: return@mapNotNull null)
+            }
+            val sourceSortedContent = sourceSortedContentToActualState.map { it.first }
+            val firstAvailableMessageInfoToMessage = sourceSortedContentToActualState.firstOrNull() ?: return@subscribeSafelyWithoutExceptions
             val (firstAvailableMessageInfo, message) = firstAvailableMessageInfoToMessage
             config ?.beforeMessage ?.let {
                 send(
@@ -164,11 +165,10 @@ object Plugin : Plugin {
                     }
                 }
             } ?.getOrNull() ?: message
+            val unchangedMessages = sourceSortedContentToActualState.drop(1).map { it.first.messageMetaInfo }
             val sentInfos = publisher.resend(
                 chatsConfig.targetChat,
-                listOf(MessageMetaInfo(resultMessage).copy(group = firstAvailableMessageInfo.messageMetaInfo.group)) + ((sourceSortedContent.dropWhile { it != firstAvailableMessageInfo } - firstAvailableMessageInfo)).map {
-                    it.messageMetaInfo
-                }
+                listOf(MessageMetaInfo(resultMessage).copy(group = firstAvailableMessageInfo.messageMetaInfo.group)) + unchangedMessages
             )
             sentInfos.firstOrNull() ?.second ?.also {
                 suggestionTextSources ?.also { textSources ->
