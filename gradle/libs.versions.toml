@@ -5,7 +5,7 @@ kotlin-serialization = "1.6.2"
 
 plagubot = "8.2.0"
 plagubot-plugins = "0.18.2"
-tgbotapi-libraries = "0.18.2"
+tgbotapi-libraries = "0.18.3"
 
 moko-resources = "0.23.0"
 
