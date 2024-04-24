@@ -4,6 +4,7 @@ import korlibs.time.DateTime
 import dev.inmo.micro_utils.repos.exposed.*
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedStatusesRepo.Companion.statusType
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
+import dev.inmo.tgbotapi.types.RawChatId
 import dev.inmo.tgbotapi.types.UserId
 import org.jetbrains.exposed.sql.*
 import kotlin.reflect.KClass
@@ -20,7 +21,7 @@ internal class ExposedStatusesRepo(
     val ResultRow.asObject
         get() = get(statusTypeColumn).status(
             DateTime(get(dateTimeColumn)),
-            get(reviewerIdColumn) ?.let(::UserId)
+            get(reviewerIdColumn) ?.let(::RawChatId) ?.let(::UserId)
         )
 
     init {

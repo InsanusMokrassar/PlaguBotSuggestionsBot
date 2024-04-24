@@ -6,14 +6,14 @@ import dev.inmo.micro_utils.repos.CRUDRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import korlibs.time.DateTime
 import dev.inmo.tgbotapi.types.IdChatIdentifier
-import dev.inmo.tgbotapi.types.MessageIdentifier
+import dev.inmo.tgbotapi.types.MessageId
 import dev.inmo.tgbotapi.types.UserId
 
 import kotlinx.coroutines.flow.Flow
 
 
 interface ReadSuggestionsRepo : ReadCRUDRepo<RegisteredSuggestion, SuggestionId> {
-    suspend fun getIdByChatAndMessage(chatId: IdChatIdentifier, messageId: MessageIdentifier): SuggestionId?
+    suspend fun getIdByChatAndMessage(chatId: IdChatIdentifier, messageId: MessageId): SuggestionId?
 
     suspend fun getFirstMessageInfo(suggestionId: SuggestionId): SuggestionContentInfo?
 

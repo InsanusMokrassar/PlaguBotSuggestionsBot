@@ -8,10 +8,7 @@ import dev.inmo.micro_utils.repos.exposed.initTable
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedStatusesRepo.Companion.statusType
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
-import dev.inmo.tgbotapi.types.IdChatIdentifier
-import dev.inmo.tgbotapi.types.MessageIdentifier
-import dev.inmo.tgbotapi.types.UserId
-import dev.inmo.tgbotapi.types.messageThreadIdField
+import dev.inmo.tgbotapi.types.*
 import kotlinx.coroutines.flow.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -61,7 +58,7 @@ class ExposedSuggestionsRepo(
                         SortOrder.DESC
                     ).limit(1).firstOrNull() ?.asObject
                 } ?: error("Unable to take any status for the suggestion $id"),
-                UserId(get(userIdColumn)),
+                UserId(RawChatId(get(userIdColumn))),
                 get(isAnonymousColumn),
                 with(contentRepo) {
                     selectAll().where { suggestionIdColumn.eq(id.string) }.map {
@@ -91,7 +88,7 @@ class ExposedSuggestionsRepo(
                     SortOrder.DESC
                 ).limit(1).firstOrNull() ?.asObject
             } ?: value.status,
-            UserId(get(userIdColumn)),
+            UserId(RawChatId(get(userIdColumn))),
             get(isAnonymousColumn),
             with(contentRepo) {
                 selectAll().where { suggestionIdColumn.eq(id.string) }.map {
@@ -108,7 +105,7 @@ class ExposedSuggestionsRepo(
     }
 
     override fun update(id: SuggestionId?, value: NewSuggestion, it: UpdateBuilder<Int>) {
-        it[userIdColumn] = value.user.chatId
+        it[userIdColumn] = value.user.chatId.long
         it[isAnonymousColumn] = value.isAnonymous
     }
 
@@ -121,7 +118,7 @@ class ExposedSuggestionsRepo(
                 insert {
                     it[suggestionIdColumn] = suggestionId.string
                     it[dateTimeColumn] = status.dateTime.unixMillis
-                    it[reviewerIdColumn] = (status as? SuggestionStatus.Reviewed) ?.reviewerId ?.chatId
+                    it[reviewerIdColumn] = (status as? SuggestionStatus.Reviewed) ?.reviewerId ?.chatId ?.long
                     it[statusTypeColumn] = status.statusType()
                 }
             }
@@ -134,10 +131,10 @@ class ExposedSuggestionsRepo(
             post.content.forEach { contentInfo ->
                 insert {
                     it[suggestionIdColumn] = post.id.string
-                    it[chatIdColumn] = contentInfo.messageMetaInfo.chatId.chatId
-                    it[threadIdColumn] = contentInfo.messageMetaInfo.chatId.threadId
-                    it[messageIdColumn] = contentInfo.messageMetaInfo.messageId
-                    it[groupColumn] = contentInfo.messageMetaInfo.group
+                    it[chatIdColumn] = contentInfo.messageMetaInfo.chatId.chatId.long
+                    it[threadIdColumn] = contentInfo.messageMetaInfo.chatId.threadId ?.long
+                    it[messageIdColumn] = contentInfo.messageMetaInfo.messageId.long
+                    it[groupColumn] = contentInfo.messageMetaInfo.group ?.string
                     it[orderColumn] = contentInfo.order
                 }
             }
@@ -204,13 +201,13 @@ class ExposedSuggestionsRepo(
         _updatedObjectsFlow.emit(it)
     }
 
-    override suspend fun getIdByChatAndMessage(chatId: IdChatIdentifier, messageId: MessageIdentifier): SuggestionId? {
+    override suspend fun getIdByChatAndMessage(chatId: IdChatIdentifier, messageId: MessageId): SuggestionId? {
         return transaction(database) {
             with(contentRepo) {
                 selectAll().where {
-                    chatIdColumn.eq(chatId.chatId)
-                        .and(chatId.threadId ?.let { threadIdColumn.eq(it) } ?: threadIdColumn.isNull())
-                        .and(messageIdColumn.eq(messageId))
+                    chatIdColumn.eq(chatId.chatId.long)
+                        .and(chatId.threadId ?.let { threadIdColumn.eq(it.long) } ?: threadIdColumn.isNull())
+                        .and(messageIdColumn.eq(messageId.long))
                 }.limit(1).firstOrNull() ?.get(suggestionIdColumn)
             } ?.let(::SuggestionId)
         }
@@ -234,7 +231,7 @@ class ExposedSuggestionsRepo(
 
     override suspend fun isUserHaveBannedSuggestions(userid: UserId): Boolean = transaction(database) {
         selectAll().where {
-            userIdColumn.eq(userid.chatId).and(
+            userIdColumn.eq(userid.chatId.long).and(
                 idColumn.inSubQuery(
                     with(statusesRepo) {
                         select(suggestionIdColumn).where {
