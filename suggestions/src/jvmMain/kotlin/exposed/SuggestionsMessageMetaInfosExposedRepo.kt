@@ -5,8 +5,7 @@ import dev.inmo.micro_utils.repos.exposed.initTable
 import dev.inmo.micro_utils.repos.exposed.keyvalue.AbstractExposedKeyValueRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
-import dev.inmo.tgbotapi.types.IdChatIdentifier
-import dev.inmo.tgbotapi.types.MessageId
+import dev.inmo.tgbotapi.types.*
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ISqlExpressionBuilder
@@ -29,21 +28,21 @@ class SuggestionsMessageMetaInfosExposedRepo(
     private val groupColumn = text("group").nullable()
     override val selectById: ISqlExpressionBuilder.(SuggestionId) -> Op<Boolean> = { keyColumn.eq(it.string) }
     override val selectByValue: ISqlExpressionBuilder.(MessageMetaInfo) -> Op<Boolean> = {
-        chatIdColumn.eq(it.chatId.chatId).and(
-            threadIdColumn.eqOrIsNull(it.chatId.threadId)
+        chatIdColumn.eq(it.chatId.chatId.long).and(
+            threadIdColumn.eqOrIsNull(it.chatId.threadId ?.long)
         ).and(
-            messageIdColumn.eq(it.messageId)
+            messageIdColumn.eq(it.messageId.long)
         ).and(
-            groupColumn.eqOrIsNull(it.group)
+            groupColumn.eqOrIsNull(it.group ?.string)
         )
     }
     override val ResultRow.asKey: SuggestionId
         get() = SuggestionId(get(keyColumn))
     override val ResultRow.asObject: MessageMetaInfo
         get() = MessageMetaInfo(
-            IdChatIdentifier(get(chatIdColumn), get(threadIdColumn)),
-            get(messageIdColumn),
-            get(groupColumn)
+            IdChatIdentifier(RawChatId(get(chatIdColumn)), get(threadIdColumn) ?.let(::MessageThreadId)),
+            MessageId(get(messageIdColumn)),
+            get(groupColumn) ?.let(::MediaGroupId)
         )
 
     init {
@@ -51,10 +50,10 @@ class SuggestionsMessageMetaInfosExposedRepo(
     }
 
     override fun update(k: SuggestionId, v: MessageMetaInfo, it: UpdateBuilder<Int>) {
-        it[chatIdColumn] = v.chatId.chatId
-        it[threadIdColumn] = v.chatId.threadId
-        it[messageIdColumn] = v.messageId
-        it[groupColumn] = v.group
+        it[chatIdColumn] = v.chatId.chatId.long
+        it[threadIdColumn] = v.chatId.threadId ?.long
+        it[messageIdColumn] = v.messageId.long
+        it[groupColumn] = v.group ?.string
     }
 
     override fun insertKey(k: SuggestionId, v: MessageMetaInfo, it: InsertStatement<Number>) {
@@ -66,10 +65,10 @@ class SuggestionsMessageMetaInfosExposedRepo(
         messageId: MessageId
     ) = transaction(database) {
         selectAll().where {
-            chatIdColumn.eq(chatId.chatId).and(
-                threadIdColumn.eqOrIsNull(chatId.threadId)
+            chatIdColumn.eq(chatId.chatId.long).and(
+                threadIdColumn.eqOrIsNull(chatId.threadId ?.long)
             ).and(
-                messageIdColumn.eq(messageId)
+                messageIdColumn.eq(messageId.long)
             )
         }.limit(1).firstOrNull() ?.get(keyColumn) ?.let(::SuggestionId)
     }

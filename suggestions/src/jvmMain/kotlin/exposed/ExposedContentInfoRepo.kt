@@ -3,7 +3,7 @@ package dev.inmo.plagubot.suggestionsbot.suggestions.exposed
 import dev.inmo.micro_utils.repos.exposed.*
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
-import dev.inmo.tgbotapi.types.IdChatIdentifier
+import dev.inmo.tgbotapi.types.*
 import org.jetbrains.exposed.sql.*
 
 internal class ExposedContentInfoRepo(
@@ -20,9 +20,9 @@ internal class ExposedContentInfoRepo(
     val ResultRow.asObject
         get() = SuggestionContentInfo(
             MessageMetaInfo(
-                IdChatIdentifier(get(chatIdColumn), get(threadIdColumn)),
-                get(messageIdColumn),
-                get(groupColumn)
+                IdChatIdentifier(RawChatId(get(chatIdColumn)), get(threadIdColumn) ?.let(::MessageThreadId)),
+                MessageId(get(messageIdColumn)),
+                get(groupColumn) ?.let(::MediaGroupId)
             ),
             get(orderColumn)
         )
