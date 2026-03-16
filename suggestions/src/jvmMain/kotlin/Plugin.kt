@@ -1,19 +1,19 @@
 package dev.inmo.plagubot.suggestionsbot.suggestions
 
 import dev.inmo.plagubot.Plugin
+import dev.inmo.plagubot.database
 import dev.inmo.plagubot.suggestionsbot.common.ChatsConfig
 import dev.inmo.plagubot.suggestionsbot.suggestions.exposed.ExposedSuggestionsRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.repo.*
 import dev.inmo.tgbotapi.extensions.behaviour_builder.BehaviourContext
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import kotlinx.serialization.json.*
-import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.dsl.binds
 
 object Plugin : Plugin {
-    override fun Module.setupDI(database: Database, params: JsonObject) {
+    override fun Module.setupDI(params: JsonObject) {
         single { ExposedSuggestionsRepo(database) } binds arrayOf(
             SuggestionsRepo::class,
             ReadSuggestionsRepo::class,

@@ -6,16 +6,13 @@ import dev.inmo.micro_utils.repos.exposed.keyvalue.AbstractExposedKeyValueRepo
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.SuggestionId
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.types.*
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.ISqlExpressionBuilder
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.statements.InsertStatement
-import org.jetbrains.exposed.sql.statements.UpdateBuilder
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 class SuggestionsMessageMetaInfosExposedRepo(
     database: Database,
@@ -26,8 +23,8 @@ class SuggestionsMessageMetaInfosExposedRepo(
     private val threadIdColumn = long("thread_id").nullable().default(null)
     private val messageIdColumn = long("message_id")
     private val groupColumn = text("group").nullable()
-    override val selectById: ISqlExpressionBuilder.(SuggestionId) -> Op<Boolean> = { keyColumn.eq(it.string) }
-    override val selectByValue: ISqlExpressionBuilder.(MessageMetaInfo) -> Op<Boolean> = {
+    override val selectById: (SuggestionId) -> Op<Boolean> = { keyColumn.eq(it.string) }
+    override val selectByValue: (MessageMetaInfo) -> Op<Boolean> = {
         chatIdColumn.eq(it.chatId.chatId.long).and(
             threadIdColumn.eqOrIsNull(it.chatId.threadId ?.long)
         ).and(
@@ -56,7 +53,7 @@ class SuggestionsMessageMetaInfosExposedRepo(
         it[groupColumn] = v.group ?.string
     }
 
-    override fun insertKey(k: SuggestionId, v: MessageMetaInfo, it: InsertStatement<Number>) {
+    override fun insertKey(k: SuggestionId, v: MessageMetaInfo, it: UpdateBuilder<Int>) {
         it[keyColumn] = k.string
     }
 
