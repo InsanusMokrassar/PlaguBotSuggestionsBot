@@ -1,23 +1,23 @@
 [versions]
 
-kotlin = "1.9.23"
-kotlin-serialization = "1.6.3"
+kotlin = "2.3.10"
+kotlin-serialization = "1.10.0"
 
-plagubot = "8.3.0"
-plagubot-plugins = "0.18.3"
-tgbotapi-libraries = "0.19.0"
+plagubot = "11.1.0"
+plagubot-plugins = "0.25.0"
+tgbotapi-libraries = "0.29.0"
 
 moko-resources = "0.23.0"
 
-tgbotapi = "12.0.1"
+tgbotapi = "32.0.0"
 
 psql = "42.6.0"
 
-microutils = "0.20.45"
+microutils = "0.29.1"
 
-ksp = "1.9.23-1.0.20"
+ksp = "2.3.6"
 
-dokka = "1.9.20"
+dokka = "2.1.0"
 
 [libraries]
 

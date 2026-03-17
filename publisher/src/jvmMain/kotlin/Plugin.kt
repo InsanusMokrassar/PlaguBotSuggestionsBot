@@ -38,10 +38,10 @@ import dev.inmo.tgbotapi.types.message.content.TextContent
 import dev.inmo.tgbotapi.types.message.content.TextedMediaContent
 import dev.inmo.tgbotapi.types.message.textsources.RegularTextSource
 import dev.inmo.tgbotapi.types.message.textsources.TextSourcesList
-import dev.inmo.tgbotapi.types.message.textsources.hashtag
-import dev.inmo.tgbotapi.types.message.textsources.link
-import dev.inmo.tgbotapi.types.message.textsources.mention
-import dev.inmo.tgbotapi.types.message.textsources.regular
+import dev.inmo.tgbotapi.types.message.textsources.hashtagTextSource
+import dev.inmo.tgbotapi.types.message.textsources.linkTextSource
+import dev.inmo.tgbotapi.types.message.textsources.mentionTextSource
+import dev.inmo.tgbotapi.types.message.textsources.regularTextSource
 import dev.inmo.tgbotapi.types.userLink
 import dev.inmo.tgbotapi.utils.buildEntities
 import kotlinx.coroutines.delay
@@ -49,7 +49,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.Koin
 import org.koin.core.module.Module
 
@@ -75,12 +75,12 @@ object Plugin : Plugin {
 
             val userMention by lazy {
                 when {
-                    suggestion.isAnonymous -> hashtag(anonText)
-                    suggester == null -> link(defaultUserText, suggestion.user.chatId.userLink)
-                    suggester.username == null && suggester.allowCreateUserIdLink -> link(suggester.name, suggester.id.userLink)
+                    suggestion.isAnonymous -> hashtagTextSource(anonText)
+                    suggester == null -> linkTextSource(defaultUserText, suggestion.user.chatId.userLink)
+                    suggester.username == null && suggester.allowCreateUserIdLink -> linkTextSource(suggester.name, suggester.id.userLink)
                     else -> suggester.username ?.let {
-                        mention(it)
-                    } ?: regular(suggester.name)
+                        mentionTextSource(it)
+                    } ?: regularTextSource(suggester.name)
                 }
             }
             val parts = template.split("$")
@@ -93,7 +93,7 @@ object Plugin : Plugin {
                             val firstPartOfS = s.removeSuffix(sWithoutCommand)
                             when {
                                 firstPartOfS == "user" -> +userMention
-                                firstPartOfS == "bot" -> +mention(bot.name, bot.id)
+                                firstPartOfS == "bot" -> +mentionTextSource(bot.name, bot.id)
                                 else -> +firstPartOfS
                             }
                             +(sWithoutCommand.removeSuffix("\\").takeIf {
@@ -106,7 +106,7 @@ object Plugin : Plugin {
             }
         }
     }
-    override fun Module.setupDI(database: Database, params: JsonObject) {
+    override fun Module.setupDI(params: JsonObject) {
         params["publisher"] ?.let { json ->
             single { get<Json>().decodeFromJsonElement(BoundsConfig.serializer(), json) }
         }
