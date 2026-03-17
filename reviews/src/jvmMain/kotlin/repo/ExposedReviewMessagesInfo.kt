@@ -10,8 +10,10 @@ import dev.inmo.tgbotapi.types.MessageThreadId
 import dev.inmo.tgbotapi.types.RawChatId
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import org.jetbrains.exposed.v1.jdbc.Database
 
 class ExposedReviewMessagesInfo(
@@ -54,7 +56,7 @@ class ExposedReviewMessagesInfo(
             MessageId(get(suggestionMessageIdColumn))
         )
 
-    override fun insert(k: SuggestionId, v: ReviewContentInfo, it: InsertStatement<Number>) {
+    override fun insert(k: SuggestionId, v: ReviewContentInfo, it: UpdateBuilder<Int>) {
         it[keyColumn] = k.string
         it[chatIdColumn] = v.chatId.chatId.long
         it[threadIdColumn] = v.chatId.threadId ?.long
