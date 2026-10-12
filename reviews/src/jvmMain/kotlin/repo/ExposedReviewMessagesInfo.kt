@@ -8,13 +8,13 @@ import dev.inmo.tgbotapi.types.IdChatIdentifier
 import dev.inmo.tgbotapi.types.MessageId
 import dev.inmo.tgbotapi.types.MessageThreadId
 import dev.inmo.tgbotapi.types.RawChatId
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.ISqlExpressionBuilder
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.statements.InsertStatement
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.jdbc.Database
 
 class ExposedReviewMessagesInfo(
     database: Database
@@ -32,8 +32,8 @@ class ExposedReviewMessagesInfo(
     val suggestionMessageIdColumn = long("suggestion_message_id")
 
 
-    override val selectById: ISqlExpressionBuilder.(SuggestionId) -> Op<Boolean> = { keyColumn.eq(it.string) }
-    override val selectByValue: ISqlExpressionBuilder.(ReviewContentInfo) -> Op<Boolean> = {
+    override val selectById: (SuggestionId) -> Op<Boolean> = { keyColumn.eq(it.string) }
+    override val selectByValue: (ReviewContentInfo) -> Op<Boolean> = {
         chatIdColumn.eq(it.chatId.chatId.long).and(
             threadIdColumn.eqOrIsNull(it.chatId.threadId ?.long)
         ).and(
@@ -56,7 +56,7 @@ class ExposedReviewMessagesInfo(
             MessageId(get(suggestionMessageIdColumn))
         )
 
-    override fun insert(k: SuggestionId, v: ReviewContentInfo, it: InsertStatement<Number>) {
+    override fun insert(k: SuggestionId, v: ReviewContentInfo, it: UpdateBuilder<Int>) {
         it[keyColumn] = k.string
         it[chatIdColumn] = v.chatId.chatId.long
         it[threadIdColumn] = v.chatId.threadId ?.long

@@ -70,14 +70,13 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.JsonObject
-import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 
 object Plugin : Plugin {
     private val RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier = named("RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier")
-    override fun Module.setupDI(database: Database, params: JsonObject) {
+    override fun Module.setupDI(params: JsonObject) {
         single(RegistrarSuggestionsMessageMetaInfosExposedRepoQualifier) {
             SuggestionsMessageMetaInfosExposedRepo(get(), "registrar_suggestions_messages")
         }
@@ -235,7 +234,7 @@ object Plugin : Plugin {
             }.subscribeSafelyWithoutExceptions(this) {
                 state = state.copy(isAnonymous = !state.isAnonymous)
                 answer(it)
-                edit(messageToDelete, buildKeyboard())
+                edit(messageToDelete, replyMarkup = buildKeyboard())
             }
 
             val newMessagesInfo = firstOf<List<ContentMessage<*>>?> {

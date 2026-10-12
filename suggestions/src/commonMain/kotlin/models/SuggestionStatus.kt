@@ -5,7 +5,7 @@ import dev.icerock.moko.resources.StringResource
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import dev.inmo.plagubot.suggestionsbot.common.DateTimeSerializer
-import dev.inmo.plagubot.suggestionsbot.suggestions.SuggestionsResources
+import dev.inmo.plagubot.suggestionsbot.suggestions.*
 import dev.inmo.tgbotapi.types.UserId
 
 @Serializable

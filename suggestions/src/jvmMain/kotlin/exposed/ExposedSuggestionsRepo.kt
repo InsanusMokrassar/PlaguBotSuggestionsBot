@@ -10,11 +10,22 @@ import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import dev.inmo.plagubot.suggestionsbot.suggestions.repo.SuggestionsRepo
 import dev.inmo.tgbotapi.types.*
 import kotlinx.coroutines.flow.*
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
-import org.jetbrains.exposed.sql.statements.*
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.inSubQuery
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.statements.InsertStatement
+import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 class ExposedSuggestionsRepo(
     override val database: Database
@@ -41,8 +52,8 @@ class ExposedSuggestionsRepo(
 
     override val primaryKey: PrimaryKey = PrimaryKey(idColumn)
 
-    override val selectById: ISqlExpressionBuilder.(SuggestionId) -> Op<Boolean> = { idColumn.eq(it.string) }
-    override val selectByIds: ISqlExpressionBuilder.(List<SuggestionId>) -> Op<Boolean> = { idColumn.inList(it.map { it.string }) }
+    override val selectById: (SuggestionId) -> Op<Boolean> = { idColumn.eq(it.string) }
+    override val selectByIds: (List<SuggestionId>) -> Op<Boolean> = { idColumn.inList(it.map { it.string }) }
     override val ResultRow.asId: SuggestionId
         get() = SuggestionId(get(idColumn))
     override val ResultRow.asObject: RegisteredSuggestion
@@ -98,7 +109,7 @@ class ExposedSuggestionsRepo(
         )
     }
 
-    override fun createAndInsertId(value: NewSuggestion, it: InsertStatement<Number>): SuggestionId {
+    override fun createAndInsertId(value: NewSuggestion, it: UpdateBuilder<Int>): SuggestionId {
         val id = SuggestionId(uuid4().toString())
         it[idColumn] = id.string
         return id
@@ -170,8 +181,8 @@ class ExposedSuggestionsRepo(
         }.associateBy { it.id }
         val existsIds = suggestions.keys.toList()
         transaction(db = database) {
-            val deleted = deleteWhere(null, null) {
-                selectByIds(it, existsIds)
+            val deleted = deleteWhere {
+                selectByIds(existsIds)
             }
             with(contentRepo) {
                 deleteWhere {

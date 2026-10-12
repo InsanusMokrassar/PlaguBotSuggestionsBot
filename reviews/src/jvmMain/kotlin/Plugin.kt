@@ -30,8 +30,8 @@ import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.libraries.resender.MessagesResender
 import dev.inmo.tgbotapi.libraries.resender.invoke
 import dev.inmo.tgbotapi.types.chat.PrivateChat
-import dev.inmo.tgbotapi.types.message.textsources.link
-import dev.inmo.tgbotapi.types.message.textsources.mention
+import dev.inmo.tgbotapi.types.message.textsources.linkTextSource
+import dev.inmo.tgbotapi.types.message.textsources.mentionTextSource
 import dev.inmo.tgbotapi.utils.buildEntities
 import dev.inmo.tgbotapi.types.queries.callback.MessageCallbackQuery
 import dev.inmo.tgbotapi.types.userLink
@@ -39,7 +39,6 @@ import dev.inmo.tgbotapi.utils.underline
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import org.jetbrains.exposed.sql.Database
 import org.koin.core.Koin
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -54,7 +53,7 @@ object Plugin : Plugin {
     )
     private val PrivateChat.name
         get() = "${lastName.takeIf { it.isNotEmpty() } ?.let { "$it " } ?: ""}${firstName}"
-    override fun Module.setupDI(database: Database, params: JsonObject) {
+    override fun Module.setupDI(params: JsonObject) {
         singleWithBinds {
             ExposedReviewMessagesInfo(get())
         }
@@ -95,15 +94,15 @@ object Plugin : Plugin {
 
                 when {
                     user == null -> {
-                        +link(ReviewsResources.strings.defaultUserName.localized(chatsConfig.locale), suggestion.user.userLink)
+                        +linkTextSource(ReviewsResources.strings.defaultUserName.localized(chatsConfig.locale), suggestion.user.userLink)
                     }
                     user.username == null -> {
-                        +link(user.name, suggestion.user.chatId.userLink)
+                        +linkTextSource(user.name, suggestion.user.chatId.userLink)
                     }
                     else -> {
                         user.username ?.let {
-                            +mention(it)
-                        } ?: +link(user.name, suggestion.user.chatId.userLink)
+                            +mentionTextSource(it)
+                        } ?: +linkTextSource(user.name, suggestion.user.chatId.userLink)
                     }
                 }
 

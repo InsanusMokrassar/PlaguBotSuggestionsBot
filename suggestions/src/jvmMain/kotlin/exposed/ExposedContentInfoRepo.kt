@@ -4,7 +4,11 @@ import dev.inmo.micro_utils.repos.exposed.*
 import dev.inmo.plagubot.suggestionsbot.suggestions.models.*
 import dev.inmo.tgbotapi.libraries.resender.MessageMetaInfo
 import dev.inmo.tgbotapi.types.*
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.ReferenceOption
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.jdbc.Database
 
 internal class ExposedContentInfoRepo(
     override val database: Database,
