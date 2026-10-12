@@ -27,7 +27,7 @@ kotlin {
 }
 
 multiplatformResources {
-    multiplatformResourcesPackage = "$group.${project.name}" // required
-    multiplatformResourcesClassName = "SuggestionsResources" // optional, default MR
-    iosBaseLocalizationRegion = "en" // optional, default "en"
+    resourcesPackage.set("$group.${project.name}") // required
+    resourcesClassName.set("SuggestionsResources") // optional, default MR
+    iosBaseLocalizationRegion.set("en") // optional, default "en"
 }

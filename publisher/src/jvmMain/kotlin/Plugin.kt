@@ -125,7 +125,7 @@ object Plugin : Plugin {
             val sourceSortedContentToActualState: List<Pair<SuggestionContentInfo, AccessibleMessage>> = it.content.sortedBy { it.order }.mapNotNull {
                 it to (runCatchingSafely {
                     forwardMessage(it.messageMetaInfo.chatId, toChatId = chatsConfig.cacheChat, it.messageMetaInfo.messageId)
-                }.getOrNull() ?: return@mapNotNull null)
+                }.getOrNull() as? AccessibleMessage ?: return@mapNotNull null)
             }
             val sourceSortedContent = sourceSortedContentToActualState.map { it.first }
             val firstAvailableMessageInfoToMessage = sourceSortedContentToActualState.firstOrNull() ?: return@subscribeSafelyWithoutExceptions

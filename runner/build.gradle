@@ -26,5 +26,9 @@ dependencies {
 }
 
 application {
-    mainClassName = 'dev.inmo.plagubot.AppKt'
+    mainClass = 'dev.inmo.plagubot.AppKt'
+}
+
+kotlin {
+    jvmToolchain(17)
 }
